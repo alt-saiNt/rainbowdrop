@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Outer Drop Shape (White) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,22 C54,22 78,44 78,62 A24,24 0 1 1 30,62 C30,44 54,22 54,22 Z" />
+
+    <!-- Inner Drop Shape (Rainbow Gradient) -->
+    <path
+        android:pathData="M54,32 C54,32 72,48 72,62 A18,18 0 1 1 36,62 C36,48 54,32 54,32 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="36"
+                android:startY="32"
+                android:endX="72"
+                android:endY="80"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#FF5252" />
+                <item android:offset="0.2" android:color="#FFAB40" />
+                <item android:offset="0.4" android:color="#FFFF00" />
+                <item android:offset="0.6" android:color="#69F0AE" />
+                <item android:offset="0.8" android:color="#40C4FF" />
+                <item android:offset="1.0" android:color="#E040FB" />
+            </gradient>
+        </aapt:attr>
+    </path>
+</vector>

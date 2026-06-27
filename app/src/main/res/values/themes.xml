@@ -1,0 +1,4 @@
+<resources>
+
+    <style name="Theme.RainbowDrop" parent="Theme.MaterialComponents.Light" />
+</resources>

@@ -1,0 +1,217 @@
+package com.example.rainbowdrop.engine
+
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Path
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.rememberTransformableState
+import androidx.compose.foundation.gestures.transformable
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.input.pointer.pointerInput
+import java.util.LinkedList
+import java.util.Queue
+
+enum class Tool {
+    BUCKET, BRUSH
+}
+
+@Composable
+fun ColoringCanvas(
+    baseBitmap: Bitmap,
+    currentColor: Int,
+    currentTool: Tool,
+    isMysteryMode: Boolean,
+    undoRedoManager: UndoRedoManager,
+    modifier: Modifier = Modifier
+) {
+    var scale by remember { mutableStateOf(1f) }
+    var offset by remember { mutableStateOf(Offset.Zero) }
+    val transformState = rememberTransformableState { zoomChange, offsetChange, _ ->
+        scale *= zoomChange
+        offset += offsetChange
+    }
+
+    // This bitmap will hold the user's coloring
+    val coloringBitmap = remember(baseBitmap) {
+        Bitmap.createBitmap(baseBitmap.width, baseBitmap.height, Bitmap.Config.ARGB_8888)
+    }
+    val coloringCanvas = remember(coloringBitmap) { Canvas(coloringBitmap) }
+    val brushPaint = remember {
+        Paint().apply {
+            isAntiAlias = true
+            style = Paint.Style.STROKE
+            strokeWidth = 20f
+            strokeCap = Paint.Cap.ROUND
+            strokeJoin = Paint.Join.ROUND
+        }
+    }
+
+    var redrawTrigger by remember { mutableStateOf(0) }
+    
+    // Checkered background for active color highlighting
+    val checkerboardPaint = remember {
+        Paint().apply {
+            shader = android.graphics.BitmapShader(
+                Bitmap.createBitmap(20, 20, Bitmap.Config.ARGB_8888).apply {
+                    val c = Canvas(this)
+                    val p = Paint()
+                    p.color = Color.LTGRAY
+                    c.drawRect(0f, 0f, 10f, 10f, p)
+                    c.drawRect(10f, 10f, 20f, 20f, p)
+                    p.color = Color.WHITE
+                    c.drawRect(10f, 0f, 20f, 10f, p)
+                    c.drawRect(0f, 10f, 10f, 20f, p)
+                },
+                android.graphics.Shader.TileMode.REPEAT,
+                android.graphics.Shader.TileMode.REPEAT
+            )
+        }
+    }
+
+    BoxWithConstraints(
+        modifier = modifier
+            .fillMaxSize()
+            .transformable(state = transformState)
+            .pointerInput(currentTool, currentColor) {
+                if (currentTool == Tool.BRUSH) {
+                    var currentPath = Path()
+                    var currentPoints = mutableListOf<Pair<Float, Float>>()
+                    detectDragGestures(
+                        onDragStart = { startOffset ->
+                            val bitmapOffset = screenToBitmap(startOffset, scale, offset, size.width.toFloat(), size.height.toFloat(), baseBitmap.width.toFloat(), baseBitmap.height.toFloat())
+                            currentPath.moveTo(bitmapOffset.x, bitmapOffset.y)
+                            currentPoints.add(bitmapOffset.x to bitmapOffset.y)
+                        },
+                        onDrag = { change, _ ->
+                            val bitmapOffset = screenToBitmap(change.position, scale, offset, size.width.toFloat(), size.height.toFloat(), baseBitmap.width.toFloat(), baseBitmap.height.toFloat())
+                            currentPath.lineTo(bitmapOffset.x, bitmapOffset.y)
+                            currentPoints.add(bitmapOffset.x to bitmapOffset.y)
+                            
+                            brushPaint.color = currentColor
+                            coloringCanvas.drawPath(currentPath, brushPaint)
+                            redrawTrigger++
+                        },
+                        onDragEnd = {
+                            undoRedoManager.addAction(CanvasAction(com.example.rainbowdrop.data.ActionType.DRAW, Tool.BRUSH, currentColor, currentPath, points = currentPoints))
+                        }
+                    )
+                } else if (currentTool == Tool.BUCKET) {
+                    detectDragGestures(
+                        onDrag = { _, _ -> /* Ignore drag in bucket mode */ },
+                        onDragEnd = { /* No-op */ },
+                        onDragStart = { startOffset ->
+                            val bitmapOffset = screenToBitmap(startOffset, scale, offset, size.width.toFloat(), size.height.toFloat(), baseBitmap.width.toFloat(), baseBitmap.height.toFloat())
+                            val x = bitmapOffset.x.toInt()
+                            val y = bitmapOffset.y.toInt()
+                            if (x in 0 until baseBitmap.width && y in 0 until baseBitmap.height) {
+                                floodFill(coloringBitmap, x, y, currentColor)
+                                undoRedoManager.addAction(CanvasAction(com.example.rainbowdrop.data.ActionType.FILL, Tool.BUCKET, currentColor, x = x, y = y))
+                                redrawTrigger++
+                            }
+                        }
+                    )
+                }
+            }
+    ) {
+        Canvas(
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer(
+                    scaleX = scale,
+                    scaleY = scale,
+                    translationX = offset.x,
+                    translationY = offset.y
+                )
+        ) {
+            val dummy = redrawTrigger // Dependency to trigger redraw
+            
+            drawContext.canvas.nativeCanvas.apply {
+                // Highlight active areas with checkerboard if using bucket
+                if (currentTool == Tool.BUCKET) {
+                    drawRect(0f, 0f, baseBitmap.width.toFloat(), baseBitmap.height.toFloat(), checkerboardPaint)
+                }
+
+                // Draw user coloring
+                drawBitmap(coloringBitmap, 0f, 0f, null)
+                
+                // Draw base bitmap (outlines) on top
+                if (!isMysteryMode) {
+                    drawBitmap(baseBitmap, 0f, 0f, null)
+                } else {
+                    val paint = Paint().apply { alpha = 25 }
+                    drawBitmap(baseBitmap, 0f, 0f, paint)
+                }
+            }
+        }
+    }
+}
+
+private fun screenToBitmap(
+    screenOffset: Offset,
+    scale: Float,
+    translation: Offset,
+    screenWidth: Float,
+    screenHeight: Float,
+    bitmapWidth: Float,
+    bitmapHeight: Float
+): Offset {
+    val centerX = screenWidth / 2f
+    val centerY = screenHeight / 2f
+    
+    val normalizedX = (screenOffset.x - translation.x - centerX) / scale + centerX
+    val normalizedY = (screenOffset.y - translation.y - centerY) / scale + centerY
+    
+    val scaleFactor = minOf(screenWidth / bitmapWidth, screenHeight / bitmapHeight)
+    val actualBitmapWidth = bitmapWidth * scaleFactor
+    val actualBitmapHeight = bitmapHeight * scaleFactor
+    
+    val left = (screenWidth - actualBitmapWidth) / 2f
+    val top = (screenHeight - actualBitmapHeight) / 2f
+    
+    val bitmapX = (normalizedX - left) / scaleFactor
+    val bitmapY = (normalizedY - top) / scaleFactor
+    
+    return Offset(bitmapX, bitmapY)
+}
+
+private fun floodFill(bitmap: Bitmap, x: Int, y: Int, targetColor: Int) {
+    val srcColor = bitmap.getPixel(x, y)
+    if (srcColor == targetColor) return
+
+    val width = bitmap.width
+    val height = bitmap.height
+    val pixels = IntArray(width * height)
+    bitmap.getPixels(pixels, 0, width, 0, 0, width, height)
+
+    val queue: Queue<Int> = LinkedList()
+    queue.add(y * width + x)
+
+    while (queue.isNotEmpty()) {
+        val pos = queue.poll()!!
+        val cx = pos % width
+        val cy = pos / width
+        
+        if (pixels[pos] == srcColor) {
+            pixels[pos] = targetColor
+            if (cx > 0) queue.add(pos - 1)
+            if (cx < width - 1) queue.add(pos + 1)
+            if (cy > 0) queue.add(pos - width)
+            if (cy < height - 1) queue.add(pos + width)
+        }
+    }
+    bitmap.setPixels(pixels, 0, width, 0, 0, width, height)
+}

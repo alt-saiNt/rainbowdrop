@@ -1,0 +1,27 @@
+<instructions>
+Generate a 100% Kotlin Android application using Jetpack Compose and Material Design 3 architecture. The app allows users to select a photo, apply a stylistic filter, and color the result using a dual-mode interactive canvas. 
+</instructions>
+
+<features>
+- Photo Selection: Implement the Android Photo Picker (PickVisualMedia API) to allow single image selection from local or cloud storage without requiring legacy storage permissions.
+- Filter Selection Screen: Allow the user to select from 7 stylized image processing filters: Pop Art, Comic Book, Watercolor, Vector Poster, Ink Sketch, Charcoal, and Tattoo Flash.
+- Canvas Generation: Include a toggle prior to generating the canvas that allows the user to select between "Standard Mode" (all outlines fully visible) and "Mystery Mode" (outlines hidden or transparent until colored, leaving only a basic silhouette outline of the main subject/element as a starting point).
+- Active Color Highlighting: In bucket-fill mode, whenever a user selects a color from the palette, all uncolored regions corresponding to that specific color must temporarily fill with a repeating grey checkerboard pattern (via a performance-optimized BitmapShader) to highlight their locations for the user, especially when highly zoomed in. 
+- Interactive Canvas: A custom Compose Canvas supporting multi-touch pinch-to-zoom and two-finger panning.
+- Coloring Modes: 
+   1. A low-latency bucket-fill mode for distinct regions.
+   2. A freestyle brush mode optimized for performance using off-screen bitmap caching and path accumulation to eliminate UI lag.
+- State Management: Implement a robust, non-destructive undo/redo action buffer for the canvas and use a Room database to persist project state in the background. 
+- Export: Time-Lapse Export using the saved stroke history to programmatically redraw the canvas on a background thread, using FFmpeg-Kit to encode and export a sped-up MP4 or GIF.
+</features>
+
+<ui_and_design>
+- Design an exceptionally minimal, clean, distraction-free UI.
+- Tool Navigation: Implement a streamlined, horizontally scrolling bottom carousel ribbon containing the primary tools: Color/Brush selector, Undo button, Redo button, 'Hold to Peek' original image toggle, and a 'Zoom to Fit/Recenter' canvas button.
+- Menu Integration: The 'Start New Project' and 'Return to Menu' options must be tucked cleanly inside the Color/Brush selector menu to maximize active screen space for the artwork.
+- Include two distinct save functions accessible via the UI: 'Save Progress' (commits current state to the Room DB) and 'Export Finished' (renders the final static image or time-lapse video directly to the device's media gallery).
+</ui_and_design>
+
+<architecture>
+Utilize a recommended MVVM architecture. Ensure all UI elements are fully responsive for both phone and tablet form factors. Optimize canvas rendering pipelines to maintain a smooth 60fps on lower-end and budget devices.
+</architecture>
