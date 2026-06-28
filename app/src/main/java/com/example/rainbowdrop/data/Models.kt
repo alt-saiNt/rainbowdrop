@@ -53,3 +53,31 @@ class Converters {
     @TypeConverter
     fun toActionType(value: String) = ActionType.valueOf(value)
 }
+
+fun List<Pair<Float, Float>>.serializePoints(): String =
+    joinToString(";") { "${it.first},${it.second}" }
+
+fun String.deserializePoints(): List<Pair<Float, Float>> {
+    if (isBlank()) return emptyList()
+    return split(";").mapNotNull {
+        val parts = it.split(",")
+        if (parts.size == 2) {
+            val x = parts[0].toFloatOrNull()
+            val y = parts[1].toFloatOrNull()
+            if (x != null && y != null) {
+                x to y
+            } else null
+        } else null
+    }
+}
+
+fun List<Pair<Float, Float>>.toAndroidPath(): android.graphics.Path {
+    val path = android.graphics.Path()
+    if (isNotEmpty()) {
+        path.moveTo(this[0].first, this[0].second)
+        for (i in 1 until size) {
+            path.lineTo(this[i].first, this[i].second)
+        }
+    }
+    return path
+}

@@ -57,7 +57,7 @@ class TimeLapseExporter(private val context: Context) {
         }
 
         val outputVideo = File(context.externalCacheDir, "timelapse_${System.currentTimeMillis()}.mp4")
-        val command = "-y -framerate 10 -i ${framesDir.absolutePath}/frame_%04d.jpg -c:v libx264 -pix_fmt yuv420p ${outputVideo.absolutePath}"
+        val command = "-y -framerate 10 -i ${framesDir.absolutePath}/frame_%04d.jpg -c:v mpeg4 -pix_fmt yuv420p ${outputVideo.absolutePath}"
         
         val session = FFmpegKit.execute(command)
         if (ReturnCode.isSuccess(session.returnCode)) {

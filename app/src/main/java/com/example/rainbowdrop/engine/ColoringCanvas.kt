@@ -12,6 +12,7 @@ import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -22,6 +23,8 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.util.LinkedList
 import java.util.Queue
 
@@ -61,6 +64,39 @@ fun ColoringCanvas(
     }
 
     var redrawTrigger by remember { mutableStateOf(0) }
+
+    LaunchedEffect(undoRedoManager.changeCount, baseBitmap) {
+        coloringBitmap.eraseColor(Color.TRANSPARENT)
+        undoRedoManager.currentHistory.forEach { action ->
+            when (action.type) {
+                com.example.rainbowdrop.data.ActionType.DRAW -> {
+                    brushPaint.color = action.color
+                    action.path?.let { coloringCanvas.drawPath(it, brushPaint) }
+                }
+                com.example.rainbowdrop.data.ActionType.FILL -> {
+                    if (action.x != null && action.y != null) {
+                        floodFill(coloringBitmap, action.x, action.y, action.color)
+                    }
+                }
+            }
+        }
+        redrawTrigger++
+    }
+
+    var maskBitmap by remember { mutableStateOf<Bitmap?>(null) }
+
+    LaunchedEffect(currentColor, baseBitmap, redrawTrigger, currentTool) {
+        if (currentTool != Tool.BUCKET) {
+            maskBitmap = null
+            return@LaunchedEffect
+        }
+        withContext(Dispatchers.Default) {
+            val mask = generateHighlightMask(baseBitmap, coloringBitmap, currentColor)
+            withContext(Dispatchers.Main) {
+                maskBitmap = mask
+            }
+        }
+    }
     
     // Checkered background for active color highlighting
     val checkerboardPaint = remember {
@@ -92,6 +128,8 @@ fun ColoringCanvas(
                     var currentPoints = mutableListOf<Pair<Float, Float>>()
                     detectDragGestures(
                         onDragStart = { startOffset ->
+                            currentPath = Path()
+                            currentPoints = mutableListOf()
                             val bitmapOffset = screenToBitmap(startOffset, scale, offset, size.width.toFloat(), size.height.toFloat(), baseBitmap.width.toFloat(), baseBitmap.height.toFloat())
                             currentPath.moveTo(bitmapOffset.x, bitmapOffset.y)
                             currentPoints.add(bitmapOffset.x to bitmapOffset.y)
@@ -140,9 +178,15 @@ fun ColoringCanvas(
             val dummy = redrawTrigger // Dependency to trigger redraw
             
             drawContext.canvas.nativeCanvas.apply {
-                // Highlight active areas with checkerboard if using bucket
-                if (currentTool == Tool.BUCKET) {
-                    drawRect(0f, 0f, baseBitmap.width.toFloat(), baseBitmap.height.toFloat(), checkerboardPaint)
+                // Highlight active areas with checkerboard if using bucket and mask is ready
+                if (currentTool == Tool.BUCKET && maskBitmap != null) {
+                    val saveCount = saveLayer(0f, 0f, baseBitmap.width.toFloat(), baseBitmap.height.toFloat(), null)
+                    drawBitmap(maskBitmap!!, 0f, 0f, null)
+                    val maskedCheckerPaint = android.graphics.Paint(checkerboardPaint).apply {
+                        xfermode = android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.SRC_IN)
+                    }
+                    drawRect(0f, 0f, baseBitmap.width.toFloat(), baseBitmap.height.toFloat(), maskedCheckerPaint)
+                    restoreToCount(saveCount)
                 }
 
                 // Draw user coloring
@@ -214,4 +258,43 @@ private fun floodFill(bitmap: Bitmap, x: Int, y: Int, targetColor: Int) {
         }
     }
     bitmap.setPixels(pixels, 0, width, 0, 0, width, height)
+}
+
+private fun generateHighlightMask(
+    base: Bitmap,
+    coloring: Bitmap,
+    targetColor: Int
+): Bitmap {
+    val width = base.width
+    val height = base.height
+    val mask = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+    
+    val basePixels = IntArray(width * height)
+    val coloringPixels = IntArray(width * height)
+    base.getPixels(basePixels, 0, width, 0, 0, width, height)
+    coloring.getPixels(coloringPixels, 0, width, 0, 0, width, height)
+    
+    val maskPixels = IntArray(width * height)
+    
+    val targetR = (targetColor shr 16) and 0xFF
+    val targetG = (targetColor shr 8) and 0xFF
+    val targetB = targetColor and 0xFF
+    
+    for (i in basePixels.indices) {
+        val cColor = coloringPixels[i]
+        if (((cColor shr 24) and 0xFF) > 0) continue
+        
+        val bColor = basePixels[i]
+        val bR = (bColor shr 16) and 0xFF
+        val bG = (bColor shr 8) and 0xFF
+        val bB = bColor and 0xFF
+        
+        val dist = Math.abs(bR - targetR) + Math.abs(bG - targetG) + Math.abs(bB - targetB)
+        if (dist < 45) {
+            maskPixels[i] = 0xFFFFFFFF.toInt()
+        }
+    }
+    
+    mask.setPixels(maskPixels, 0, width, 0, 0, width, height)
+    return mask
 }

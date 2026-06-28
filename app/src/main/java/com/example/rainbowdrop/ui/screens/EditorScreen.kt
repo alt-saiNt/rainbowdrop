@@ -32,6 +32,7 @@ import com.example.rainbowdrop.data.*
 import com.example.rainbowdrop.engine.*
 import com.example.rainbowdrop.ui.theme.RainbowDropTheme
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -59,10 +60,81 @@ fun EditorScreen(
     var isExporting by remember { mutableStateOf(false) }
     var exportProgress by remember { mutableStateOf(0f) }
 
+    var currentProjectId by remember { mutableStateOf<Long?>(null) }
+
+    fun saveProgress() {
+        scope.launch(Dispatchers.IO) {
+            val image = originalBitmap ?: return@launch
+            val filter = currentFilter
+            val historyActions = undoRedoManager.currentHistory
+            
+            val projectId = currentProjectId
+            val newId = if (projectId == null) {
+                val project = ColoringProject(
+                    originalImageUri = imageUri,
+                    filterType = filter
+                )
+                db.projectDao().insertProject(project)
+            } else {
+                val project = ColoringProject(
+                    id = projectId,
+                    originalImageUri = imageUri,
+                    filterType = filter
+                )
+                db.projectDao().updateProject(project)
+                projectId
+            }
+            
+            db.projectDao().deleteHistoryForProject(newId)
+            historyActions.forEach { action ->
+                val entry = ActionEntry(
+                    projectId = newId,
+                    actionType = action.type,
+                    tool = action.tool,
+                    color = action.color,
+                    pathData = action.points?.serializePoints(),
+                    x = action.x,
+                    y = action.y
+                )
+                db.projectDao().insertAction(entry)
+            }
+            
+            withContext(Dispatchers.Main) {
+                currentProjectId = newId
+            }
+        }
+    }
+
     LaunchedEffect(imageUri) {
         withContext(Dispatchers.IO) {
             try {
                 if (imageUri.isEmpty()) return@withContext
+                
+                val project = db.projectDao().getProjectByUri(imageUri)
+                var initialFilter = currentFilter
+                
+                if (project != null) {
+                    val historyEntries = db.projectDao().getHistoryForProject(project.id).first()
+                    val canvasActions = historyEntries.map { entry ->
+                        val pointsList = entry.pathData?.deserializePoints()
+                        CanvasAction(
+                            type = entry.actionType,
+                            tool = entry.tool,
+                            color = entry.color,
+                            path = pointsList?.toAndroidPath(),
+                            x = entry.x,
+                            y = entry.y,
+                            points = pointsList
+                        )
+                    }
+                    initialFilter = project.filterType
+                    withContext(Dispatchers.Main) {
+                        currentProjectId = project.id
+                        currentFilter = project.filterType
+                        undoRedoManager.loadHistory(canvasActions)
+                    }
+                }
+                
                 val bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                     val source = ImageDecoder.createSource(context.contentResolver, android.net.Uri.parse(imageUri))
                     ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
@@ -72,7 +144,7 @@ fun EditorScreen(
                     MediaStore.Images.Media.getBitmap(context.contentResolver, android.net.Uri.parse(imageUri))
                 }
                 originalBitmap = bitmap
-                processedBitmap = ImageProcessor.applyFilter(bitmap, currentFilter)
+                processedBitmap = ImageProcessor.applyFilter(bitmap, initialFilter)
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -97,6 +169,9 @@ fun EditorScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = { saveProgress() }) {
+                        Icon(Icons.Rounded.Save, contentDescription = "Save Progress")
+                    }
                     IconButton(onClick = {
                         scope.launch {
                             isExporting = true
