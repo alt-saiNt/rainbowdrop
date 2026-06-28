@@ -14,6 +14,8 @@ data class ColoringProject(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val originalImageUri: String,
     val filterType: FilterType,
+    val tool: Tool,
+    val isMysteryMode: Boolean,
     val lastModified: Long = System.currentTimeMillis()
 )
 

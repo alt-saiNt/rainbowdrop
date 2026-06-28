@@ -1,78 +1,70 @@
 [
     {
-        "merged": "C:\\Users\\beckb\\.gradle\\daemon\\9.4.1\\com.example.rainbowdrop.app-debug-73:\\xml_data_extraction_rules.xml.flat",
-        "source": "C:\\Users\\beckb\\.gradle\\daemon\\9.4.1\\com.example.rainbowdrop.app-main-75:\\xml\\data_extraction_rules.xml"
+        "merged": "com.example.rainbowdrop.app-debug-74:/mipmap-xxhdpi_ic_launcher_round.webp.flat",
+        "source": "com.example.rainbowdrop.app-main-76:/mipmap-xxhdpi/ic_launcher_round.webp"
     },
     {
-        "merged": "C:\\Users\\beckb\\.gradle\\daemon\\9.4.1\\com.example.rainbowdrop.app-debug-73:\\drawable_ic_launcher_background.xml.flat",
-        "source": "C:\\Users\\beckb\\.gradle\\daemon\\9.4.1\\com.example.rainbowdrop.app-main-75:\\drawable\\ic_launcher_background.xml"
+        "merged": "com.example.rainbowdrop.app-debug-74:/drawable_ic_launcher_background.xml.flat",
+        "source": "com.example.rainbowdrop.app-main-76:/drawable/ic_launcher_background.xml"
     },
     {
-        "merged": "C:\\Users\\beckb\\.gradle\\daemon\\9.4.1\\com.example.rainbowdrop.app-debug-73:\\mipmap-hdpi_ic_launcher.webp.flat",
-        "source": "C:\\Users\\beckb\\.gradle\\daemon\\9.4.1\\com.example.rainbowdrop.app-main-75:\\mipmap-hdpi\\ic_launcher.webp"
+        "merged": "com.example.rainbowdrop.app-debug-74:/mipmap-xhdpi_ic_launcher.webp.flat",
+        "source": "com.example.rainbowdrop.app-main-76:/mipmap-xhdpi/ic_launcher.webp"
     },
     {
-        "merged": "C:\\Users\\beckb\\.gradle\\daemon\\9.4.1\\com.example.rainbowdrop.app-debug-73:\\mipmap-anydpi_ic_launcher_round.xml.flat",
-        "source": "C:\\Users\\beckb\\.gradle\\daemon\\9.4.1\\com.example.rainbowdrop.app-main-75:\\mipmap-anydpi\\ic_launcher_round.xml"
+        "merged": "com.example.rainbowdrop.app-debug-74:/xml_data_extraction_rules.xml.flat",
+        "source": "com.example.rainbowdrop.app-main-76:/xml/data_extraction_rules.xml"
     },
     {
-        "merged": "C:\\Users\\beckb\\.gradle\\daemon\\9.4.1\\com.example.rainbowdrop.app-debug-73:\\mipmap-mdpi_ic_launcher_round.webp.flat",
-        "source": "C:\\Users\\beckb\\.gradle\\daemon\\9.4.1\\com.example.rainbowdrop.app-main-75:\\mipmap-mdpi\\ic_launcher_round.webp"
+        "merged": "com.example.rainbowdrop.app-debug-74:/mipmap-mdpi_ic_launcher_round.webp.flat",
+        "source": "com.example.rainbowdrop.app-main-76:/mipmap-mdpi/ic_launcher_round.webp"
     },
     {
-        "merged": "C:\\Users\\beckb\\.gradle\\daemon\\9.4.1\\com.example.rainbowdrop.app-debug-73:\\mipmap-xhdpi_ic_launcher.webp.flat",
-        "source": "C:\\Users\\beckb\\.gradle\\daemon\\9.4.1\\com.example.rainbowdrop.app-main-75:\\mipmap-xhdpi\\ic_launcher.webp"
+        "merged": "com.example.rainbowdrop.app-debug-74:/drawable_placeholder.png.flat",
+        "source": "com.example.rainbowdrop.app-main-76:/drawable/placeholder.png"
     },
     {
-        "merged": "com.example.rainbowdrop.app-debug-73:/drawable_ic_launcher_foreground.xml.flat",
-        "source": "com.example.rainbowdrop.app-main-75:/drawable/ic_launcher_foreground.xml"
+        "merged": "com.example.rainbowdrop.app-debug-74:/mipmap-xxhdpi_ic_launcher.webp.flat",
+        "source": "com.example.rainbowdrop.app-main-76:/mipmap-xxhdpi/ic_launcher.webp"
     },
     {
-        "merged": "C:\\Users\\beckb\\.gradle\\daemon\\9.4.1\\com.example.rainbowdrop.app-debug-73:\\mipmap-hdpi_ic_launcher_round.webp.flat",
-        "source": "C:\\Users\\beckb\\.gradle\\daemon\\9.4.1\\com.example.rainbowdrop.app-main-75:\\mipmap-hdpi\\ic_launcher_round.webp"
+        "merged": "com.example.rainbowdrop.app-debug-74:/drawable_ic_launcher_foreground.xml.flat",
+        "source": "com.example.rainbowdrop.app-main-76:/drawable/ic_launcher_foreground.xml"
     },
     {
-        "merged": "C:\\Users\\beckb\\.gradle\\daemon\\9.4.1\\com.example.rainbowdrop.app-debug-73:\\mipmap-xxhdpi_ic_launcher.webp.flat",
-        "source": "C:\\Users\\beckb\\.gradle\\daemon\\9.4.1\\com.example.rainbowdrop.app-main-75:\\mipmap-xxhdpi\\ic_launcher.webp"
+        "merged": "com.example.rainbowdrop.app-debug-74:/mipmap-xxxhdpi_ic_launcher.webp.flat",
+        "source": "com.example.rainbowdrop.app-main-76:/mipmap-xxxhdpi/ic_launcher.webp"
     },
     {
-        "merged": "C:\\Users\\beckb\\.gradle\\daemon\\9.4.1\\com.example.rainbowdrop.app-debug-73:\\mipmap-xxhdpi_ic_launcher_round.webp.flat",
-        "source": "C:\\Users\\beckb\\.gradle\\daemon\\9.4.1\\com.example.rainbowdrop.app-main-75:\\mipmap-xxhdpi\\ic_launcher_round.webp"
+        "merged": "com.example.rainbowdrop.app-debug-74:/mipmap-anydpi_ic_launcher.xml.flat",
+        "source": "com.example.rainbowdrop.app-main-76:/mipmap-anydpi/ic_launcher.xml"
     },
     {
-        "merged": "com.example.rainbowdrop.app-debug-73:/drawable_ic_launcher_background.xml.flat",
-        "source": "com.example.rainbowdrop.app-main-75:/drawable/ic_launcher_background.xml"
+        "merged": "com.example.rainbowdrop.app-debug-74:/mipmap-xhdpi_ic_launcher_round.webp.flat",
+        "source": "com.example.rainbowdrop.app-main-76:/mipmap-xhdpi/ic_launcher_round.webp"
     },
     {
-        "merged": "C:\\Users\\beckb\\.gradle\\daemon\\9.4.1\\com.example.rainbowdrop.app-debug-73:\\drawable_placeholder.png.flat",
-        "source": "C:\\Users\\beckb\\.gradle\\daemon\\9.4.1\\com.example.rainbowdrop.app-main-75:\\drawable\\placeholder.png"
+        "merged": "com.example.rainbowdrop.app-debug-74:/mipmap-hdpi_ic_launcher_round.webp.flat",
+        "source": "com.example.rainbowdrop.app-main-76:/mipmap-hdpi/ic_launcher_round.webp"
     },
     {
-        "merged": "C:\\Users\\beckb\\.gradle\\daemon\\9.4.1\\com.example.rainbowdrop.app-debug-73:\\mipmap-mdpi_ic_launcher.webp.flat",
-        "source": "C:\\Users\\beckb\\.gradle\\daemon\\9.4.1\\com.example.rainbowdrop.app-main-75:\\mipmap-mdpi\\ic_launcher.webp"
+        "merged": "com.example.rainbowdrop.app-debug-74:/xml_backup_rules.xml.flat",
+        "source": "com.example.rainbowdrop.app-main-76:/xml/backup_rules.xml"
     },
     {
-        "merged": "C:\\Users\\beckb\\.gradle\\daemon\\9.4.1\\com.example.rainbowdrop.app-debug-73:\\mipmap-xxxhdpi_ic_launcher.webp.flat",
-        "source": "C:\\Users\\beckb\\.gradle\\daemon\\9.4.1\\com.example.rainbowdrop.app-main-75:\\mipmap-xxxhdpi\\ic_launcher.webp"
+        "merged": "com.example.rainbowdrop.app-debug-74:/mipmap-xxxhdpi_ic_launcher_round.webp.flat",
+        "source": "com.example.rainbowdrop.app-main-76:/mipmap-xxxhdpi/ic_launcher_round.webp"
     },
     {
-        "merged": "C:\\Users\\beckb\\.gradle\\daemon\\9.4.1\\com.example.rainbowdrop.app-debug-73:\\mipmap-anydpi_ic_launcher.xml.flat",
-        "source": "C:\\Users\\beckb\\.gradle\\daemon\\9.4.1\\com.example.rainbowdrop.app-main-75:\\mipmap-anydpi\\ic_launcher.xml"
+        "merged": "com.example.rainbowdrop.app-debug-74:/mipmap-mdpi_ic_launcher.webp.flat",
+        "source": "com.example.rainbowdrop.app-main-76:/mipmap-mdpi/ic_launcher.webp"
     },
     {
-        "merged": "C:\\Users\\beckb\\.gradle\\daemon\\9.4.1\\com.example.rainbowdrop.app-debug-73:\\mipmap-xxxhdpi_ic_launcher_round.webp.flat",
-        "source": "C:\\Users\\beckb\\.gradle\\daemon\\9.4.1\\com.example.rainbowdrop.app-main-75:\\mipmap-xxxhdpi\\ic_launcher_round.webp"
+        "merged": "com.example.rainbowdrop.app-debug-74:/mipmap-hdpi_ic_launcher.webp.flat",
+        "source": "com.example.rainbowdrop.app-main-76:/mipmap-hdpi/ic_launcher.webp"
     },
     {
-        "merged": "C:\\Users\\beckb\\.gradle\\daemon\\9.4.1\\com.example.rainbowdrop.app-debug-73:\\mipmap-xhdpi_ic_launcher_round.webp.flat",
-        "source": "C:\\Users\\beckb\\.gradle\\daemon\\9.4.1\\com.example.rainbowdrop.app-main-75:\\mipmap-xhdpi\\ic_launcher_round.webp"
-    },
-    {
-        "merged": "C:\\Users\\beckb\\.gradle\\daemon\\9.4.1\\com.example.rainbowdrop.app-debug-73:\\xml_backup_rules.xml.flat",
-        "source": "C:\\Users\\beckb\\.gradle\\daemon\\9.4.1\\com.example.rainbowdrop.app-main-75:\\xml\\backup_rules.xml"
-    },
-    {
-        "merged": "C:\\Users\\beckb\\.gradle\\daemon\\9.4.1\\com.example.rainbowdrop.app-debug-73:\\drawable_ic_launcher_foreground.xml.flat",
-        "source": "C:\\Users\\beckb\\.gradle\\daemon\\9.4.1\\com.example.rainbowdrop.app-main-75:\\drawable\\ic_launcher_foreground.xml"
+        "merged": "com.example.rainbowdrop.app-debug-74:/mipmap-anydpi_ic_launcher_round.xml.flat",
+        "source": "com.example.rainbowdrop.app-main-76:/mipmap-anydpi/ic_launcher_round.xml"
     }
 ]

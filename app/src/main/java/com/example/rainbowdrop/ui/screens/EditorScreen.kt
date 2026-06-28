@@ -40,23 +40,28 @@ import kotlinx.coroutines.withContext
 @Composable
 fun EditorScreen(
     imageUri: String,
+    filterType: FilterType,
+    tool: Tool,
+    isMysteryMode: Boolean,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val db = remember {
-        Room.databaseBuilder(context, AppDatabase::class.java, "rainbow_drop_db").build()
+        Room.databaseBuilder(context, AppDatabase::class.java, "rainbow_drop_db")
+            .fallbackToDestructiveMigration()
+            .build()
     }
     val undoRedoManager = remember { UndoRedoManager() }
     val exporter = remember { TimeLapseExporter(context) }
 
     var originalBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var processedBitmap by remember { mutableStateOf<Bitmap?>(null) }
-    var currentFilter by remember { mutableStateOf(FilterType.INK_SKETCH) }
-    var currentTool by remember { mutableStateOf(Tool.BUCKET) }
+    var activeFilter by remember { mutableStateOf(filterType) }
+    var activeTool by remember { mutableStateOf(tool) }
+    var activeMysteryMode by remember { mutableStateOf(isMysteryMode) }
     var currentColor by remember { mutableStateOf(Color.Red) }
-    var isMysteryMode by remember { mutableStateOf(false) }
     var isExporting by remember { mutableStateOf(false) }
     var exportProgress by remember { mutableStateOf(0f) }
 
@@ -65,21 +70,25 @@ fun EditorScreen(
     fun saveProgress() {
         scope.launch(Dispatchers.IO) {
             val image = originalBitmap ?: return@launch
-            val filter = currentFilter
+            val filter = activeFilter
             val historyActions = undoRedoManager.currentHistory
             
             val projectId = currentProjectId
             val newId = if (projectId == null) {
                 val project = ColoringProject(
                     originalImageUri = imageUri,
-                    filterType = filter
+                    filterType = filter,
+                    tool = activeTool,
+                    isMysteryMode = activeMysteryMode
                 )
                 db.projectDao().insertProject(project)
             } else {
                 val project = ColoringProject(
                     id = projectId,
                     originalImageUri = imageUri,
-                    filterType = filter
+                    filterType = filter,
+                    tool = activeTool,
+                    isMysteryMode = activeMysteryMode
                 )
                 db.projectDao().updateProject(project)
                 projectId
@@ -111,7 +120,7 @@ fun EditorScreen(
                 if (imageUri.isEmpty()) return@withContext
                 
                 val project = db.projectDao().getProjectByUri(imageUri)
-                var initialFilter = currentFilter
+                var initialFilter = activeFilter
                 
                 if (project != null) {
                     val historyEntries = db.projectDao().getHistoryForProject(project.id).first()
@@ -130,7 +139,9 @@ fun EditorScreen(
                     initialFilter = project.filterType
                     withContext(Dispatchers.Main) {
                         currentProjectId = project.id
-                        currentFilter = project.filterType
+                        activeFilter = project.filterType
+                        activeTool = project.tool
+                        activeMysteryMode = project.isMysteryMode
                         undoRedoManager.loadHistory(canvasActions)
                     }
                 }
@@ -139,22 +150,45 @@ fun EditorScreen(
                     val source = ImageDecoder.createSource(context.contentResolver, android.net.Uri.parse(imageUri))
                     ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
                         decoder.isMutableRequired = true
+                        decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
                     }
                 } else {
+                    @Suppress("DEPRECATION")
                     MediaStore.Images.Media.getBitmap(context.contentResolver, android.net.Uri.parse(imageUri))
                 }
-                originalBitmap = bitmap
-                processedBitmap = ImageProcessor.applyFilter(bitmap, initialFilter)
+
+                // Scale down bitmap to prevent OutOfMemory and slow filter/fill rendering
+                val maxDim = 1200
+                val scaled = if (bitmap.width > maxDim || bitmap.height > maxDim) {
+                    val aspect = bitmap.width.toFloat() / bitmap.height.toFloat()
+                    val (w, h) = if (bitmap.width > bitmap.height) {
+                        maxDim to (maxDim / aspect).toInt()
+                    } else {
+                        (maxDim * aspect).toInt() to maxDim
+                    }
+                    Bitmap.createScaledBitmap(bitmap, w, h, true)
+                } else {
+                    bitmap
+                }
+
+                val mutableBitmap = if (!scaled.isMutable) {
+                    scaled.copy(Bitmap.Config.ARGB_8888, true)
+                } else {
+                    scaled
+                }
+
+                originalBitmap = mutableBitmap
+                processedBitmap = ImageProcessor.applyFilter(mutableBitmap, initialFilter)
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
     }
 
-    LaunchedEffect(currentFilter, originalBitmap) {
+    LaunchedEffect(activeFilter, originalBitmap) {
         val original = originalBitmap ?: return@LaunchedEffect
         withContext(Dispatchers.IO) {
-            processedBitmap = ImageProcessor.applyFilter(original, currentFilter)
+            processedBitmap = ImageProcessor.applyFilter(original, activeFilter)
         }
     }
 
@@ -162,7 +196,7 @@ fun EditorScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text("Editor") },
+                title = { Text("Coloring Canvas") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
@@ -188,36 +222,50 @@ fun EditorScreen(
                     }) {
                         Icon(Icons.Rounded.IosShare, contentDescription = "Export")
                     }
-                    IconButton(onClick = { isMysteryMode = !isMysteryMode }) {
-                        Icon(
-                            if (isMysteryMode) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility,
-                            contentDescription = "Toggle Mystery Mode"
-                        )
-                    }
                 }
             )
         },
         bottomBar = {
-            Surface(tonalElevation = 3.dp) {
-                Column {
+            Surface(
+                tonalElevation = 3.dp,
+                color = MaterialTheme.colorScheme.surface
+            ) {
+                Column(
+                    modifier = Modifier
+                        .navigationBarsPadding()
+                        .padding(bottom = 8.dp)
+                ) {
                     if (isExporting) {
                         LinearProgressIndicator(
                             progress = { exportProgress },
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
-                    FilterCarousel(
-                        selectedFilter = currentFilter,
-                        onFilterSelected = { currentFilter = it }
-                    )
-                    ToolBar(
-                        currentTool = currentTool,
-                        onToolSelected = { currentTool = it },
-                        currentColor = currentColor,
-                        onColorSelected = { currentColor = it },
-                        onUndo = { undoRedoManager.undo() },
-                        onRedo = { undoRedoManager.redo() }
-                    )
+                    Row(
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Box(modifier = Modifier.weight(1f)) {
+                            ColorPicker(
+                                selectedColor = currentColor,
+                                onColorSelected = { currentColor = it }
+                            )
+                        }
+                        
+                        Spacer(modifier = Modifier.width(16.dp))
+
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            IconButton(onClick = { undoRedoManager.undo() }) {
+                                Icon(Icons.AutoMirrored.Rounded.Undo, contentDescription = "Undo")
+                            }
+                            IconButton(onClick = { undoRedoManager.redo() }) {
+                                Icon(Icons.AutoMirrored.Rounded.Redo, contentDescription = "Redo")
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -232,8 +280,8 @@ fun EditorScreen(
                 ColoringCanvas(
                     baseBitmap = bitmap,
                     currentColor = currentColor.toArgb(),
-                    currentTool = currentTool,
-                    isMysteryMode = isMysteryMode,
+                    currentTool = activeTool,
+                    isMysteryMode = activeMysteryMode,
                     undoRedoManager = undoRedoManager
                 )
             } ?: CircularProgressIndicator()
@@ -372,6 +420,12 @@ fun ColorPicker(
 @Composable
 fun EditorScreenPreview() {
     RainbowDropTheme {
-        EditorScreen(imageUri = "", onBack = {})
+        EditorScreen(
+            imageUri = "",
+            filterType = FilterType.INK_SKETCH,
+            tool = Tool.BUCKET,
+            isMysteryMode = false,
+            onBack = {}
+        )
     }
 }

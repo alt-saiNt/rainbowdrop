@@ -1,10 +1,10 @@
 {
     "logs": [
         {
-            "outputFile": "com.example.rainbowdrop.app-mergeDebugResources-71:/values-v30/values-v30.xml",
+            "outputFile": "com.example.rainbowdrop.app-mergeDebugResources-72:/values-v30/values-v30.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\beckb\\.gradle\\caches\\9.4.1\\transforms\\e042e72a38c111d1cbdb18e3b9374197\\transformed\\material3-release\\res\\values-v30\\values-v30.xml",
+                    "source": "C:\\Users\\beckb\\.gradle\\caches\\9.4.1\\transforms\\8389c974024477f1f3274186c30d31f1\\transformed\\material3-release\\res\\values-v30\\values-v30.xml",
                     "from": {
                         "startLines": "2",
                         "startColumns": "4",

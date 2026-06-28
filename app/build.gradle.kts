@@ -75,7 +75,6 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.ffmpeg.kit)
     testImplementation(libs.androidx.core)
-    testImplementation(libs.androidx.junit)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(platform(libs.androidx.compose.bom))

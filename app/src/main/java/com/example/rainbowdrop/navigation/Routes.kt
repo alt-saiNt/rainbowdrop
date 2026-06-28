@@ -9,5 +9,19 @@ sealed interface Route : NavKey {
     data object Home : Route
 
     @Serializable
-    data class Editor(val imageUri: String) : Route
+    data class FilterSelection(val imageUri: String) : Route
+
+    @Serializable
+    data class MethodSelection(
+        val imageUri: String,
+        val filterType: String
+    ) : Route
+
+    @Serializable
+    data class Editor(
+        val imageUri: String,
+        val filterType: String,
+        val tool: String,
+        val isMysteryMode: Boolean
+    ) : Route
 }

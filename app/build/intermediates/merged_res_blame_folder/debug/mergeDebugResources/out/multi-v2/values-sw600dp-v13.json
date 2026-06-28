@@ -1,10 +1,10 @@
 {
     "logs": [
         {
-            "outputFile": "com.example.rainbowdrop.app-mergeDebugResources-71:/values-sw600dp-v13/values-sw600dp-v13.xml",
+            "outputFile": "com.example.rainbowdrop.app-mergeDebugResources-72:/values-sw600dp-v13/values-sw600dp-v13.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\beckb\\.gradle\\caches\\9.4.1\\transforms\\115176747ad84cc8f3ab1477ed6e0c16\\transformed\\appcompat-1.6.1\\res\\values-sw600dp-v13\\values-sw600dp-v13.xml",
+                    "source": "C:\\Users\\beckb\\.gradle\\caches\\9.4.1\\transforms\\620814fc1e8a93510f3f83ab8002b597\\transformed\\appcompat-1.6.1\\res\\values-sw600dp-v13\\values-sw600dp-v13.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9",
                         "startColumns": "4,4,4,4,4,4,4,4",
@@ -14,7 +14,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\beckb\\.gradle\\caches\\9.4.1\\transforms\\5ae32774911e4e1a588afbc3dd467a11\\transformed\\material-1.12.0\\res\\values-sw600dp-v13\\values-sw600dp-v13.xml",
+                    "source": "C:\\Users\\beckb\\.gradle\\caches\\9.4.1\\transforms\\33d4357f6b89eb4c01e2536f73d58db0\\transformed\\material-1.12.0\\res\\values-sw600dp-v13\\values-sw600dp-v13.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,10,11,12,13,14",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4",

@@ -12,199 +12,199 @@
 9-->INJECTED
 10
 11    <uses-permission android:name="android.permission.INTERNET" />
-11-->C:\Users\beckb\AndroidStudioProjects\RainbowDrop\app\src\main\AndroidManifest.xml:5:5-67
-11-->C:\Users\beckb\AndroidStudioProjects\RainbowDrop\app\src\main\AndroidManifest.xml:5:22-64
+11-->C:\projects\Rainbow Drop\app\src\main\AndroidManifest.xml:5:5-67
+11-->C:\projects\Rainbow Drop\app\src\main\AndroidManifest.xml:5:22-64
 12
 13    <permission
-13-->[androidx.core:core:1.16.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\971c6f77987b79f013fcda56db819963\transformed\core-1.16.0\AndroidManifest.xml:22:5-24:47
+13-->[androidx.core:core:1.16.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\f0c1740d4e09ac89eb0ff346d68df25b\transformed\core-1.16.0\AndroidManifest.xml:22:5-24:47
 14        android:name="com.example.rainbowdrop.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
-14-->[androidx.core:core:1.16.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\971c6f77987b79f013fcda56db819963\transformed\core-1.16.0\AndroidManifest.xml:23:9-81
+14-->[androidx.core:core:1.16.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\f0c1740d4e09ac89eb0ff346d68df25b\transformed\core-1.16.0\AndroidManifest.xml:23:9-81
 15        android:protectionLevel="signature" />
-15-->[androidx.core:core:1.16.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\971c6f77987b79f013fcda56db819963\transformed\core-1.16.0\AndroidManifest.xml:24:9-44
+15-->[androidx.core:core:1.16.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\f0c1740d4e09ac89eb0ff346d68df25b\transformed\core-1.16.0\AndroidManifest.xml:24:9-44
 16
 17    <uses-permission android:name="com.example.rainbowdrop.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
-17-->[androidx.core:core:1.16.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\971c6f77987b79f013fcda56db819963\transformed\core-1.16.0\AndroidManifest.xml:26:5-97
-17-->[androidx.core:core:1.16.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\971c6f77987b79f013fcda56db819963\transformed\core-1.16.0\AndroidManifest.xml:26:22-94
+17-->[androidx.core:core:1.16.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\f0c1740d4e09ac89eb0ff346d68df25b\transformed\core-1.16.0\AndroidManifest.xml:26:5-97
+17-->[androidx.core:core:1.16.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\f0c1740d4e09ac89eb0ff346d68df25b\transformed\core-1.16.0\AndroidManifest.xml:26:22-94
 18
 19    <application
-19-->C:\Users\beckb\AndroidStudioProjects\RainbowDrop\app\src\main\AndroidManifest.xml:7:5-28:19
+19-->C:\projects\Rainbow Drop\app\src\main\AndroidManifest.xml:7:5-28:19
 20        android:allowBackup="true"
-20-->C:\Users\beckb\AndroidStudioProjects\RainbowDrop\app\src\main\AndroidManifest.xml:8:9-35
+20-->C:\projects\Rainbow Drop\app\src\main\AndroidManifest.xml:8:9-35
 21        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
-21-->[androidx.core:core:1.16.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\971c6f77987b79f013fcda56db819963\transformed\core-1.16.0\AndroidManifest.xml:28:18-86
+21-->[androidx.core:core:1.16.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\f0c1740d4e09ac89eb0ff346d68df25b\transformed\core-1.16.0\AndroidManifest.xml:28:18-86
 22        android:dataExtractionRules="@xml/data_extraction_rules"
-22-->C:\Users\beckb\AndroidStudioProjects\RainbowDrop\app\src\main\AndroidManifest.xml:9:9-65
+22-->C:\projects\Rainbow Drop\app\src\main\AndroidManifest.xml:9:9-65
 23        android:debuggable="true"
 24        android:extractNativeLibs="false"
 24-->INJECTED
 25        android:fullBackupContent="@xml/backup_rules"
-25-->C:\Users\beckb\AndroidStudioProjects\RainbowDrop\app\src\main\AndroidManifest.xml:10:9-54
+25-->C:\projects\Rainbow Drop\app\src\main\AndroidManifest.xml:10:9-54
 26        android:icon="@mipmap/ic_launcher"
-26-->C:\Users\beckb\AndroidStudioProjects\RainbowDrop\app\src\main\AndroidManifest.xml:11:9-43
+26-->C:\projects\Rainbow Drop\app\src\main\AndroidManifest.xml:11:9-43
 27        android:label="@string/app_name"
-27-->C:\Users\beckb\AndroidStudioProjects\RainbowDrop\app\src\main\AndroidManifest.xml:12:9-41
+27-->C:\projects\Rainbow Drop\app\src\main\AndroidManifest.xml:12:9-41
 28        android:roundIcon="@mipmap/ic_launcher_round"
-28-->C:\Users\beckb\AndroidStudioProjects\RainbowDrop\app\src\main\AndroidManifest.xml:13:9-54
+28-->C:\projects\Rainbow Drop\app\src\main\AndroidManifest.xml:13:9-54
 29        android:supportsRtl="true"
-29-->C:\Users\beckb\AndroidStudioProjects\RainbowDrop\app\src\main\AndroidManifest.xml:14:9-35
+29-->C:\projects\Rainbow Drop\app\src\main\AndroidManifest.xml:14:9-35
 30        android:theme="@style/Theme.RainbowDrop" >
-30-->C:\Users\beckb\AndroidStudioProjects\RainbowDrop\app\src\main\AndroidManifest.xml:15:9-49
+30-->C:\projects\Rainbow Drop\app\src\main\AndroidManifest.xml:15:9-49
 31        <activity
-31-->C:\Users\beckb\AndroidStudioProjects\RainbowDrop\app\src\main\AndroidManifest.xml:16:9-27:20
+31-->C:\projects\Rainbow Drop\app\src\main\AndroidManifest.xml:16:9-27:20
 32            android:name="com.example.rainbowdrop.MainActivity"
-32-->C:\Users\beckb\AndroidStudioProjects\RainbowDrop\app\src\main\AndroidManifest.xml:17:13-41
+32-->C:\projects\Rainbow Drop\app\src\main\AndroidManifest.xml:17:13-41
 33            android:exported="true"
-33-->C:\Users\beckb\AndroidStudioProjects\RainbowDrop\app\src\main\AndroidManifest.xml:18:13-36
+33-->C:\projects\Rainbow Drop\app\src\main\AndroidManifest.xml:18:13-36
 34            android:label="@string/app_name"
-34-->C:\Users\beckb\AndroidStudioProjects\RainbowDrop\app\src\main\AndroidManifest.xml:19:13-45
+34-->C:\projects\Rainbow Drop\app\src\main\AndroidManifest.xml:19:13-45
 35            android:theme="@style/Theme.RainbowDrop"
-35-->C:\Users\beckb\AndroidStudioProjects\RainbowDrop\app\src\main\AndroidManifest.xml:20:13-53
+35-->C:\projects\Rainbow Drop\app\src\main\AndroidManifest.xml:20:13-53
 36            android:windowSoftInputMode="adjustResize" >
-36-->C:\Users\beckb\AndroidStudioProjects\RainbowDrop\app\src\main\AndroidManifest.xml:21:13-55
+36-->C:\projects\Rainbow Drop\app\src\main\AndroidManifest.xml:21:13-55
 37            <intent-filter>
-37-->C:\Users\beckb\AndroidStudioProjects\RainbowDrop\app\src\main\AndroidManifest.xml:22:13-26:29
+37-->C:\projects\Rainbow Drop\app\src\main\AndroidManifest.xml:22:13-26:29
 38                <action android:name="android.intent.action.MAIN" />
-38-->C:\Users\beckb\AndroidStudioProjects\RainbowDrop\app\src\main\AndroidManifest.xml:23:17-69
-38-->C:\Users\beckb\AndroidStudioProjects\RainbowDrop\app\src\main\AndroidManifest.xml:23:25-66
+38-->C:\projects\Rainbow Drop\app\src\main\AndroidManifest.xml:23:17-69
+38-->C:\projects\Rainbow Drop\app\src\main\AndroidManifest.xml:23:25-66
 39
 40                <category android:name="android.intent.category.LAUNCHER" />
-40-->C:\Users\beckb\AndroidStudioProjects\RainbowDrop\app\src\main\AndroidManifest.xml:25:17-77
-40-->C:\Users\beckb\AndroidStudioProjects\RainbowDrop\app\src\main\AndroidManifest.xml:25:27-74
+40-->C:\projects\Rainbow Drop\app\src\main\AndroidManifest.xml:25:17-77
+40-->C:\projects\Rainbow Drop\app\src\main\AndroidManifest.xml:25:27-74
 41            </intent-filter>
 42        </activity>
 43
 44        <service
-44-->[androidx.camera:camera-camera2:1.5.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\5c8fbb7fa544fed0c586cea00644ece4\transformed\camera-camera2-1.5.0\AndroidManifest.xml:24:9-33:19
+44-->[androidx.camera:camera-camera2:1.5.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\f377ba3a3e41dd197efe12da8f24654b\transformed\camera-camera2-1.5.0\AndroidManifest.xml:24:9-33:19
 45            android:name="androidx.camera.core.impl.MetadataHolderService"
-45-->[androidx.camera:camera-camera2:1.5.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\5c8fbb7fa544fed0c586cea00644ece4\transformed\camera-camera2-1.5.0\AndroidManifest.xml:25:13-75
+45-->[androidx.camera:camera-camera2:1.5.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\f377ba3a3e41dd197efe12da8f24654b\transformed\camera-camera2-1.5.0\AndroidManifest.xml:25:13-75
 46            android:enabled="false"
-46-->[androidx.camera:camera-camera2:1.5.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\5c8fbb7fa544fed0c586cea00644ece4\transformed\camera-camera2-1.5.0\AndroidManifest.xml:26:13-36
+46-->[androidx.camera:camera-camera2:1.5.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\f377ba3a3e41dd197efe12da8f24654b\transformed\camera-camera2-1.5.0\AndroidManifest.xml:26:13-36
 47            android:exported="false" >
-47-->[androidx.camera:camera-camera2:1.5.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\5c8fbb7fa544fed0c586cea00644ece4\transformed\camera-camera2-1.5.0\AndroidManifest.xml:27:13-37
+47-->[androidx.camera:camera-camera2:1.5.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\f377ba3a3e41dd197efe12da8f24654b\transformed\camera-camera2-1.5.0\AndroidManifest.xml:27:13-37
 48            <meta-data
-48-->[androidx.camera:camera-camera2:1.5.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\5c8fbb7fa544fed0c586cea00644ece4\transformed\camera-camera2-1.5.0\AndroidManifest.xml:30:13-32:89
+48-->[androidx.camera:camera-camera2:1.5.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\f377ba3a3e41dd197efe12da8f24654b\transformed\camera-camera2-1.5.0\AndroidManifest.xml:30:13-32:89
 49                android:name="androidx.camera.core.impl.MetadataHolderService.DEFAULT_CONFIG_PROVIDER"
-49-->[androidx.camera:camera-camera2:1.5.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\5c8fbb7fa544fed0c586cea00644ece4\transformed\camera-camera2-1.5.0\AndroidManifest.xml:31:17-103
+49-->[androidx.camera:camera-camera2:1.5.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\f377ba3a3e41dd197efe12da8f24654b\transformed\camera-camera2-1.5.0\AndroidManifest.xml:31:17-103
 50                android:value="androidx.camera.camera2.Camera2Config$DefaultProvider" />
-50-->[androidx.camera:camera-camera2:1.5.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\5c8fbb7fa544fed0c586cea00644ece4\transformed\camera-camera2-1.5.0\AndroidManifest.xml:32:17-86
+50-->[androidx.camera:camera-camera2:1.5.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\f377ba3a3e41dd197efe12da8f24654b\transformed\camera-camera2-1.5.0\AndroidManifest.xml:32:17-86
 51        </service>
 52        <service
-52-->[androidx.room:room-runtime-android:2.7.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\94c0da69bd81daa06998b610a08d6efc\transformed\room-runtime-release\AndroidManifest.xml:24:9-28:63
+52-->[androidx.room:room-runtime-android:2.7.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\7fab408fa74e162bbf134213fdf55fd5\transformed\room-runtime-release\AndroidManifest.xml:24:9-28:63
 53            android:name="androidx.room.MultiInstanceInvalidationService"
-53-->[androidx.room:room-runtime-android:2.7.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\94c0da69bd81daa06998b610a08d6efc\transformed\room-runtime-release\AndroidManifest.xml:25:13-74
+53-->[androidx.room:room-runtime-android:2.7.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\7fab408fa74e162bbf134213fdf55fd5\transformed\room-runtime-release\AndroidManifest.xml:25:13-74
 54            android:directBootAware="true"
-54-->[androidx.room:room-runtime-android:2.7.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\94c0da69bd81daa06998b610a08d6efc\transformed\room-runtime-release\AndroidManifest.xml:26:13-43
+54-->[androidx.room:room-runtime-android:2.7.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\7fab408fa74e162bbf134213fdf55fd5\transformed\room-runtime-release\AndroidManifest.xml:26:13-43
 55            android:exported="false" />
-55-->[androidx.room:room-runtime-android:2.7.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\94c0da69bd81daa06998b610a08d6efc\transformed\room-runtime-release\AndroidManifest.xml:27:13-37
+55-->[androidx.room:room-runtime-android:2.7.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\7fab408fa74e162bbf134213fdf55fd5\transformed\room-runtime-release\AndroidManifest.xml:27:13-37
 56
 57        <activity
-57-->[com.google.android.gms:play-services-base:18.5.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\e89a9b98fd6b493ab206341cf0f60f1c\transformed\play-services-base-18.5.0\AndroidManifest.xml:5:9-173
+57-->[com.google.android.gms:play-services-base:18.5.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\1de463738b72078cf4c711822d3b7c52\transformed\play-services-base-18.5.0\AndroidManifest.xml:5:9-173
 58            android:name="com.google.android.gms.common.api.GoogleApiActivity"
-58-->[com.google.android.gms:play-services-base:18.5.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\e89a9b98fd6b493ab206341cf0f60f1c\transformed\play-services-base-18.5.0\AndroidManifest.xml:5:19-85
+58-->[com.google.android.gms:play-services-base:18.5.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\1de463738b72078cf4c711822d3b7c52\transformed\play-services-base-18.5.0\AndroidManifest.xml:5:19-85
 59            android:exported="false"
-59-->[com.google.android.gms:play-services-base:18.5.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\e89a9b98fd6b493ab206341cf0f60f1c\transformed\play-services-base-18.5.0\AndroidManifest.xml:5:146-170
+59-->[com.google.android.gms:play-services-base:18.5.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\1de463738b72078cf4c711822d3b7c52\transformed\play-services-base-18.5.0\AndroidManifest.xml:5:146-170
 60            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
-60-->[com.google.android.gms:play-services-base:18.5.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\e89a9b98fd6b493ab206341cf0f60f1c\transformed\play-services-base-18.5.0\AndroidManifest.xml:5:86-145
+60-->[com.google.android.gms:play-services-base:18.5.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\1de463738b72078cf4c711822d3b7c52\transformed\play-services-base-18.5.0\AndroidManifest.xml:5:86-145
 61
 62        <meta-data
-62-->[com.google.android.gms:play-services-basement:18.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\4f2835043ef449546add01387d16018b\transformed\play-services-basement-18.4.0\AndroidManifest.xml:6:9-122
+62-->[com.google.android.gms:play-services-basement:18.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\d9766b193eaf8c9b5aa9c8bc060786ae\transformed\play-services-basement-18.4.0\AndroidManifest.xml:6:9-122
 63            android:name="com.google.android.gms.version"
-63-->[com.google.android.gms:play-services-basement:18.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\4f2835043ef449546add01387d16018b\transformed\play-services-basement-18.4.0\AndroidManifest.xml:6:20-65
+63-->[com.google.android.gms:play-services-basement:18.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\d9766b193eaf8c9b5aa9c8bc060786ae\transformed\play-services-basement-18.4.0\AndroidManifest.xml:6:20-65
 64            android:value="@integer/google_play_services_version" />
-64-->[com.google.android.gms:play-services-basement:18.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\4f2835043ef449546add01387d16018b\transformed\play-services-basement-18.4.0\AndroidManifest.xml:6:66-119
+64-->[com.google.android.gms:play-services-basement:18.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\d9766b193eaf8c9b5aa9c8bc060786ae\transformed\play-services-basement-18.4.0\AndroidManifest.xml:6:66-119
 65
 66        <activity
-66-->[androidx.compose.ui:ui-tooling-android:1.11.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\4fc99e9fa2909425ad7e70831db45be0\transformed\ui-tooling\AndroidManifest.xml:23:9-25:39
+66-->[androidx.compose.ui:ui-tooling-android:1.11.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\8fc9b5b7cd28535c1a6a2cf0b67c6591\transformed\ui-tooling\AndroidManifest.xml:23:9-25:39
 67            android:name="androidx.compose.ui.tooling.PreviewActivity"
-67-->[androidx.compose.ui:ui-tooling-android:1.11.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\4fc99e9fa2909425ad7e70831db45be0\transformed\ui-tooling\AndroidManifest.xml:24:13-71
+67-->[androidx.compose.ui:ui-tooling-android:1.11.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\8fc9b5b7cd28535c1a6a2cf0b67c6591\transformed\ui-tooling\AndroidManifest.xml:24:13-71
 68            android:exported="true" />
-68-->[androidx.compose.ui:ui-tooling-android:1.11.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\4fc99e9fa2909425ad7e70831db45be0\transformed\ui-tooling\AndroidManifest.xml:25:13-36
+68-->[androidx.compose.ui:ui-tooling-android:1.11.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\8fc9b5b7cd28535c1a6a2cf0b67c6591\transformed\ui-tooling\AndroidManifest.xml:25:13-36
 69
 70        <provider
-70-->[androidx.emoji2:emoji2:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\89f423fb27b446bfa885eff5ec04fd87\transformed\emoji2-1.4.0\AndroidManifest.xml:24:9-32:20
+70-->[androidx.emoji2:emoji2:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\aaa2daa9f4fa29d0f3b4e17ba6bf5aea\transformed\emoji2-1.4.0\AndroidManifest.xml:24:9-32:20
 71            android:name="androidx.startup.InitializationProvider"
-71-->[androidx.emoji2:emoji2:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\89f423fb27b446bfa885eff5ec04fd87\transformed\emoji2-1.4.0\AndroidManifest.xml:25:13-67
+71-->[androidx.emoji2:emoji2:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\aaa2daa9f4fa29d0f3b4e17ba6bf5aea\transformed\emoji2-1.4.0\AndroidManifest.xml:25:13-67
 72            android:authorities="com.example.rainbowdrop.androidx-startup"
-72-->[androidx.emoji2:emoji2:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\89f423fb27b446bfa885eff5ec04fd87\transformed\emoji2-1.4.0\AndroidManifest.xml:26:13-68
+72-->[androidx.emoji2:emoji2:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\aaa2daa9f4fa29d0f3b4e17ba6bf5aea\transformed\emoji2-1.4.0\AndroidManifest.xml:26:13-68
 73            android:exported="false" >
-73-->[androidx.emoji2:emoji2:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\89f423fb27b446bfa885eff5ec04fd87\transformed\emoji2-1.4.0\AndroidManifest.xml:27:13-37
+73-->[androidx.emoji2:emoji2:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\aaa2daa9f4fa29d0f3b4e17ba6bf5aea\transformed\emoji2-1.4.0\AndroidManifest.xml:27:13-37
 74            <meta-data
-74-->[androidx.emoji2:emoji2:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\89f423fb27b446bfa885eff5ec04fd87\transformed\emoji2-1.4.0\AndroidManifest.xml:29:13-31:52
+74-->[androidx.emoji2:emoji2:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\aaa2daa9f4fa29d0f3b4e17ba6bf5aea\transformed\emoji2-1.4.0\AndroidManifest.xml:29:13-31:52
 75                android:name="androidx.emoji2.text.EmojiCompatInitializer"
-75-->[androidx.emoji2:emoji2:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\89f423fb27b446bfa885eff5ec04fd87\transformed\emoji2-1.4.0\AndroidManifest.xml:30:17-75
+75-->[androidx.emoji2:emoji2:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\aaa2daa9f4fa29d0f3b4e17ba6bf5aea\transformed\emoji2-1.4.0\AndroidManifest.xml:30:17-75
 76                android:value="androidx.startup" />
-76-->[androidx.emoji2:emoji2:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\89f423fb27b446bfa885eff5ec04fd87\transformed\emoji2-1.4.0\AndroidManifest.xml:31:17-49
+76-->[androidx.emoji2:emoji2:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\aaa2daa9f4fa29d0f3b4e17ba6bf5aea\transformed\emoji2-1.4.0\AndroidManifest.xml:31:17-49
 77            <meta-data
-77-->[androidx.lifecycle:lifecycle-process:2.11.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\fb45aa745eb8b0d8d3fe58485be3cec4\transformed\lifecycle-process-2.11.0\AndroidManifest.xml:29:13-31:52
+77-->[androidx.lifecycle:lifecycle-process:2.11.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\2aac8c663b26520a95c065d292d8f1dd\transformed\lifecycle-process-2.11.0\AndroidManifest.xml:29:13-31:52
 78                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
-78-->[androidx.lifecycle:lifecycle-process:2.11.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\fb45aa745eb8b0d8d3fe58485be3cec4\transformed\lifecycle-process-2.11.0\AndroidManifest.xml:30:17-78
+78-->[androidx.lifecycle:lifecycle-process:2.11.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\2aac8c663b26520a95c065d292d8f1dd\transformed\lifecycle-process-2.11.0\AndroidManifest.xml:30:17-78
 79                android:value="androidx.startup" />
-79-->[androidx.lifecycle:lifecycle-process:2.11.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\fb45aa745eb8b0d8d3fe58485be3cec4\transformed\lifecycle-process-2.11.0\AndroidManifest.xml:31:17-49
+79-->[androidx.lifecycle:lifecycle-process:2.11.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\2aac8c663b26520a95c065d292d8f1dd\transformed\lifecycle-process-2.11.0\AndroidManifest.xml:31:17-49
 80            <meta-data
-80-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\2303f6971d6026f4488bafcf24fd65b9\transformed\profileinstaller-1.4.0\AndroidManifest.xml:29:13-31:52
+80-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\a9bec9275b20592164407d34b3cac912\transformed\profileinstaller-1.4.0\AndroidManifest.xml:29:13-31:52
 81                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
-81-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\2303f6971d6026f4488bafcf24fd65b9\transformed\profileinstaller-1.4.0\AndroidManifest.xml:30:17-85
+81-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\a9bec9275b20592164407d34b3cac912\transformed\profileinstaller-1.4.0\AndroidManifest.xml:30:17-85
 82                android:value="androidx.startup" />
-82-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\2303f6971d6026f4488bafcf24fd65b9\transformed\profileinstaller-1.4.0\AndroidManifest.xml:31:17-49
+82-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\a9bec9275b20592164407d34b3cac912\transformed\profileinstaller-1.4.0\AndroidManifest.xml:31:17-49
 83        </provider>
 84
 85        <uses-library
-85-->[androidx.window:window:1.5.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\0fa9cb1a5440150da05bebedb7917a2c\transformed\window-1.5.0\AndroidManifest.xml:23:9-25:40
+85-->[androidx.window:window:1.5.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\c6e5c1b17bed3f10d19435996d977a0f\transformed\window-1.5.0\AndroidManifest.xml:23:9-25:40
 86            android:name="androidx.window.extensions"
-86-->[androidx.window:window:1.5.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\0fa9cb1a5440150da05bebedb7917a2c\transformed\window-1.5.0\AndroidManifest.xml:24:13-54
+86-->[androidx.window:window:1.5.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\c6e5c1b17bed3f10d19435996d977a0f\transformed\window-1.5.0\AndroidManifest.xml:24:13-54
 87            android:required="false" />
-87-->[androidx.window:window:1.5.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\0fa9cb1a5440150da05bebedb7917a2c\transformed\window-1.5.0\AndroidManifest.xml:25:13-37
+87-->[androidx.window:window:1.5.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\c6e5c1b17bed3f10d19435996d977a0f\transformed\window-1.5.0\AndroidManifest.xml:25:13-37
 88        <uses-library
-88-->[androidx.window:window:1.5.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\0fa9cb1a5440150da05bebedb7917a2c\transformed\window-1.5.0\AndroidManifest.xml:26:9-28:40
+88-->[androidx.window:window:1.5.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\c6e5c1b17bed3f10d19435996d977a0f\transformed\window-1.5.0\AndroidManifest.xml:26:9-28:40
 89            android:name="androidx.window.sidecar"
-89-->[androidx.window:window:1.5.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\0fa9cb1a5440150da05bebedb7917a2c\transformed\window-1.5.0\AndroidManifest.xml:27:13-51
+89-->[androidx.window:window:1.5.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\c6e5c1b17bed3f10d19435996d977a0f\transformed\window-1.5.0\AndroidManifest.xml:27:13-51
 90            android:required="false" />
-90-->[androidx.window:window:1.5.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\0fa9cb1a5440150da05bebedb7917a2c\transformed\window-1.5.0\AndroidManifest.xml:28:13-37
+90-->[androidx.window:window:1.5.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\c6e5c1b17bed3f10d19435996d977a0f\transformed\window-1.5.0\AndroidManifest.xml:28:13-37
 91
 92        <activity
-92-->[androidx.compose.ui:ui-test-manifest:1.11.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\0072d08e608b58d73012691839551ec6\transformed\ui-test-manifest-1.11.0\AndroidManifest.xml:23:9-26:79
+92-->[androidx.compose.ui:ui-test-manifest:1.11.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\5c05ea0ceaabd2ed93d6c23c02729285\transformed\ui-test-manifest-1.11.0\AndroidManifest.xml:23:9-26:79
 93            android:name="androidx.activity.ComponentActivity"
-93-->[androidx.compose.ui:ui-test-manifest:1.11.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\0072d08e608b58d73012691839551ec6\transformed\ui-test-manifest-1.11.0\AndroidManifest.xml:24:13-63
+93-->[androidx.compose.ui:ui-test-manifest:1.11.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\5c05ea0ceaabd2ed93d6c23c02729285\transformed\ui-test-manifest-1.11.0\AndroidManifest.xml:24:13-63
 94            android:exported="true"
-94-->[androidx.compose.ui:ui-test-manifest:1.11.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\0072d08e608b58d73012691839551ec6\transformed\ui-test-manifest-1.11.0\AndroidManifest.xml:25:13-36
+94-->[androidx.compose.ui:ui-test-manifest:1.11.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\5c05ea0ceaabd2ed93d6c23c02729285\transformed\ui-test-manifest-1.11.0\AndroidManifest.xml:25:13-36
 95            android:theme="@android:style/Theme.Material.Light.NoActionBar" />
-95-->[androidx.compose.ui:ui-test-manifest:1.11.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\0072d08e608b58d73012691839551ec6\transformed\ui-test-manifest-1.11.0\AndroidManifest.xml:26:13-76
+95-->[androidx.compose.ui:ui-test-manifest:1.11.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\5c05ea0ceaabd2ed93d6c23c02729285\transformed\ui-test-manifest-1.11.0\AndroidManifest.xml:26:13-76
 96
 97        <receiver
-97-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\2303f6971d6026f4488bafcf24fd65b9\transformed\profileinstaller-1.4.0\AndroidManifest.xml:34:9-52:20
+97-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\a9bec9275b20592164407d34b3cac912\transformed\profileinstaller-1.4.0\AndroidManifest.xml:34:9-52:20
 98            android:name="androidx.profileinstaller.ProfileInstallReceiver"
-98-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\2303f6971d6026f4488bafcf24fd65b9\transformed\profileinstaller-1.4.0\AndroidManifest.xml:35:13-76
+98-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\a9bec9275b20592164407d34b3cac912\transformed\profileinstaller-1.4.0\AndroidManifest.xml:35:13-76
 99            android:directBootAware="false"
-99-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\2303f6971d6026f4488bafcf24fd65b9\transformed\profileinstaller-1.4.0\AndroidManifest.xml:36:13-44
+99-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\a9bec9275b20592164407d34b3cac912\transformed\profileinstaller-1.4.0\AndroidManifest.xml:36:13-44
 100            android:enabled="true"
-100-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\2303f6971d6026f4488bafcf24fd65b9\transformed\profileinstaller-1.4.0\AndroidManifest.xml:37:13-35
+100-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\a9bec9275b20592164407d34b3cac912\transformed\profileinstaller-1.4.0\AndroidManifest.xml:37:13-35
 101            android:exported="true"
-101-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\2303f6971d6026f4488bafcf24fd65b9\transformed\profileinstaller-1.4.0\AndroidManifest.xml:38:13-36
+101-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\a9bec9275b20592164407d34b3cac912\transformed\profileinstaller-1.4.0\AndroidManifest.xml:38:13-36
 102            android:permission="android.permission.DUMP" >
-102-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\2303f6971d6026f4488bafcf24fd65b9\transformed\profileinstaller-1.4.0\AndroidManifest.xml:39:13-57
+102-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\a9bec9275b20592164407d34b3cac912\transformed\profileinstaller-1.4.0\AndroidManifest.xml:39:13-57
 103            <intent-filter>
-103-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\2303f6971d6026f4488bafcf24fd65b9\transformed\profileinstaller-1.4.0\AndroidManifest.xml:40:13-42:29
+103-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\a9bec9275b20592164407d34b3cac912\transformed\profileinstaller-1.4.0\AndroidManifest.xml:40:13-42:29
 104                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
-104-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\2303f6971d6026f4488bafcf24fd65b9\transformed\profileinstaller-1.4.0\AndroidManifest.xml:41:17-91
-104-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\2303f6971d6026f4488bafcf24fd65b9\transformed\profileinstaller-1.4.0\AndroidManifest.xml:41:25-88
+104-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\a9bec9275b20592164407d34b3cac912\transformed\profileinstaller-1.4.0\AndroidManifest.xml:41:17-91
+104-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\a9bec9275b20592164407d34b3cac912\transformed\profileinstaller-1.4.0\AndroidManifest.xml:41:25-88
 105            </intent-filter>
 106            <intent-filter>
-106-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\2303f6971d6026f4488bafcf24fd65b9\transformed\profileinstaller-1.4.0\AndroidManifest.xml:43:13-45:29
+106-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\a9bec9275b20592164407d34b3cac912\transformed\profileinstaller-1.4.0\AndroidManifest.xml:43:13-45:29
 107                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
-107-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\2303f6971d6026f4488bafcf24fd65b9\transformed\profileinstaller-1.4.0\AndroidManifest.xml:44:17-85
-107-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\2303f6971d6026f4488bafcf24fd65b9\transformed\profileinstaller-1.4.0\AndroidManifest.xml:44:25-82
+107-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\a9bec9275b20592164407d34b3cac912\transformed\profileinstaller-1.4.0\AndroidManifest.xml:44:17-85
+107-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\a9bec9275b20592164407d34b3cac912\transformed\profileinstaller-1.4.0\AndroidManifest.xml:44:25-82
 108            </intent-filter>
 109            <intent-filter>
-109-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\2303f6971d6026f4488bafcf24fd65b9\transformed\profileinstaller-1.4.0\AndroidManifest.xml:46:13-48:29
+109-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\a9bec9275b20592164407d34b3cac912\transformed\profileinstaller-1.4.0\AndroidManifest.xml:46:13-48:29
 110                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
-110-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\2303f6971d6026f4488bafcf24fd65b9\transformed\profileinstaller-1.4.0\AndroidManifest.xml:47:17-88
-110-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\2303f6971d6026f4488bafcf24fd65b9\transformed\profileinstaller-1.4.0\AndroidManifest.xml:47:25-85
+110-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\a9bec9275b20592164407d34b3cac912\transformed\profileinstaller-1.4.0\AndroidManifest.xml:47:17-88
+110-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\a9bec9275b20592164407d34b3cac912\transformed\profileinstaller-1.4.0\AndroidManifest.xml:47:25-85
 111            </intent-filter>
 112            <intent-filter>
-112-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\2303f6971d6026f4488bafcf24fd65b9\transformed\profileinstaller-1.4.0\AndroidManifest.xml:49:13-51:29
+112-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\a9bec9275b20592164407d34b3cac912\transformed\profileinstaller-1.4.0\AndroidManifest.xml:49:13-51:29
 113                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
-113-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\2303f6971d6026f4488bafcf24fd65b9\transformed\profileinstaller-1.4.0\AndroidManifest.xml:50:17-95
-113-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\2303f6971d6026f4488bafcf24fd65b9\transformed\profileinstaller-1.4.0\AndroidManifest.xml:50:25-92
+113-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\a9bec9275b20592164407d34b3cac912\transformed\profileinstaller-1.4.0\AndroidManifest.xml:50:17-95
+113-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\beckb\.gradle\caches\9.4.1\transforms\a9bec9275b20592164407d34b3cac912\transformed\profileinstaller-1.4.0\AndroidManifest.xml:50:25-92
 114            </intent-filter>
 115        </receiver>
 116    </application>
