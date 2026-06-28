@@ -39,7 +39,8 @@ fun ColoringCanvas(
     currentTool: Tool,
     isMysteryMode: Boolean,
     undoRedoManager: UndoRedoManager,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    coloredBitmap: Bitmap? = null
 ) {
     var scale by remember { mutableStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
@@ -75,7 +76,7 @@ fun ColoringCanvas(
                 }
                 com.example.rainbowdrop.data.ActionType.FILL -> {
                     if (action.x != null && action.y != null) {
-                        floodFill(coloringBitmap, action.x, action.y, action.color)
+                        floodFill(coloringBitmap, baseBitmap, action.x, action.y, action.color)
                     }
                 }
             }
@@ -85,13 +86,13 @@ fun ColoringCanvas(
 
     var maskBitmap by remember { mutableStateOf<Bitmap?>(null) }
 
-    LaunchedEffect(currentColor, baseBitmap, redrawTrigger, currentTool) {
+    LaunchedEffect(currentColor, baseBitmap, redrawTrigger, currentTool, coloredBitmap) {
         if (currentTool != Tool.BUCKET) {
             maskBitmap = null
             return@LaunchedEffect
         }
         withContext(Dispatchers.Default) {
-            val mask = generateHighlightMask(baseBitmap, coloringBitmap, currentColor)
+            val mask = generateHighlightMask(coloredBitmap ?: baseBitmap, coloringBitmap, currentColor)
             withContext(Dispatchers.Main) {
                 maskBitmap = mask
             }
@@ -156,7 +157,7 @@ fun ColoringCanvas(
                             val x = bitmapOffset.x.toInt()
                             val y = bitmapOffset.y.toInt()
                             if (x in 0 until baseBitmap.width && y in 0 until baseBitmap.height) {
-                                floodFill(coloringBitmap, x, y, currentColor)
+                                floodFill(coloringBitmap, baseBitmap, x, y, currentColor)
                                 undoRedoManager.addAction(CanvasAction(com.example.rainbowdrop.data.ActionType.FILL, Tool.BUCKET, currentColor, x = x, y = y))
                                 redrawTrigger++
                             }
@@ -178,6 +179,10 @@ fun ColoringCanvas(
             val dummy = redrawTrigger // Dependency to trigger redraw
             
             drawContext.canvas.nativeCanvas.apply {
+                // Draw solid white paper background matching the image boundaries
+                val paperPaint = android.graphics.Paint().apply { color = android.graphics.Color.WHITE }
+                drawRect(0f, 0f, baseBitmap.width.toFloat(), baseBitmap.height.toFloat(), paperPaint)
+
                 // Highlight active areas with checkerboard if using bucket and mask is ready
                 if (currentTool == Tool.BUCKET && maskBitmap != null) {
                     val saveCount = saveLayer(0f, 0f, baseBitmap.width.toFloat(), baseBitmap.height.toFloat(), null)
@@ -232,14 +237,20 @@ private fun screenToBitmap(
     return Offset(bitmapX, bitmapY)
 }
 
-private fun floodFill(bitmap: Bitmap, x: Int, y: Int, targetColor: Int) {
-    val srcColor = bitmap.getPixel(x, y)
+private fun floodFill(coloring: Bitmap, base: Bitmap, x: Int, y: Int, targetColor: Int) {
+    val srcColor = coloring.getPixel(x, y)
     if (srcColor == targetColor) return
 
-    val width = bitmap.width
-    val height = bitmap.height
-    val pixels = IntArray(width * height)
-    bitmap.getPixels(pixels, 0, width, 0, 0, width, height)
+    val basePixel = base.getPixel(x, y)
+    val baseAlpha = (basePixel shr 24) and 0xFF
+    if (baseAlpha > 120) return // Tap directly on an outline boundary
+
+    val width = coloring.width
+    val height = coloring.height
+    val coloringPixels = IntArray(width * height)
+    val basePixels = IntArray(width * height)
+    coloring.getPixels(coloringPixels, 0, width, 0, 0, width, height)
+    base.getPixels(basePixels, 0, width, 0, 0, width, height)
 
     val queue: Queue<Int> = LinkedList()
     queue.add(y * width + x)
@@ -249,15 +260,18 @@ private fun floodFill(bitmap: Bitmap, x: Int, y: Int, targetColor: Int) {
         val cx = pos % width
         val cy = pos / width
         
-        if (pixels[pos] == srcColor) {
-            pixels[pos] = targetColor
-            if (cx > 0) queue.add(pos - 1)
-            if (cx < width - 1) queue.add(pos + 1)
-            if (cy > 0) queue.add(pos - width)
-            if (cy < height - 1) queue.add(pos + width)
+        if (coloringPixels[pos] == srcColor) {
+            val baseA = (basePixels[pos] shr 24) and 0xFF
+            if (baseA <= 120) { // Not an outline boundary
+                coloringPixels[pos] = targetColor
+                if (cx > 0) queue.add(pos - 1)
+                if (cx < width - 1) queue.add(pos + 1)
+                if (cy > 0) queue.add(pos - width)
+                if (cy < height - 1) queue.add(pos + width)
+            }
         }
     }
-    bitmap.setPixels(pixels, 0, width, 0, 0, width, height)
+    coloring.setPixels(coloringPixels, 0, width, 0, 0, width, height)
 }
 
 private fun generateHighlightMask(

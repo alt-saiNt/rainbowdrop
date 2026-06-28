@@ -7,7 +7,9 @@ import android.provider.MediaStore
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -50,7 +52,7 @@ fun EditorScreen(
     val scope = rememberCoroutineScope()
     val db = remember {
         Room.databaseBuilder(context, AppDatabase::class.java, "rainbow_drop_db")
-            .fallbackToDestructiveMigration()
+            .fallbackToDestructiveMigration(true)
             .build()
     }
     val undoRedoManager = remember { UndoRedoManager() }
@@ -62,8 +64,16 @@ fun EditorScreen(
     var activeTool by remember { mutableStateOf(tool) }
     var activeMysteryMode by remember { mutableStateOf(isMysteryMode) }
     var currentColor by remember { mutableStateOf(Color.Red) }
+    var extractedColors by remember { mutableStateOf<List<Color>>(emptyList()) }
     var isExporting by remember { mutableStateOf(false) }
     var exportProgress by remember { mutableStateOf(0f) }
+
+    val defaultPalette = remember {
+        listOf(Color.Red, Color.Yellow, Color.Green, Color.Blue, Color.Magenta, Color.Cyan, Color.Black)
+    }
+    val displayColors = remember(extractedColors) {
+        extractedColors.ifEmpty { defaultPalette }
+    }
 
     var currentProjectId by remember { mutableStateOf<Long?>(null) }
 
@@ -179,6 +189,17 @@ fun EditorScreen(
 
                 originalBitmap = mutableBitmap
                 processedBitmap = ImageProcessor.applyFilter(mutableBitmap, initialFilter)
+
+                // Dynamically extract colors from the original downscaled image
+                val paletteInts = ColorExtractor.extractPalette(mutableBitmap)
+                val paletteColors = paletteInts.map { Color(it) }
+
+                withContext(Dispatchers.Main) {
+                    extractedColors = paletteColors
+                    if (paletteColors.isNotEmpty()) {
+                        currentColor = paletteColors.first()
+                    }
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -250,6 +271,7 @@ fun EditorScreen(
                     ) {
                         Box(modifier = Modifier.weight(1f)) {
                             ColorPicker(
+                                colors = displayColors,
                                 selectedColor = currentColor,
                                 onColorSelected = { currentColor = it }
                             )
@@ -279,6 +301,7 @@ fun EditorScreen(
             processedBitmap?.let { bitmap ->
                 ColoringCanvas(
                     baseBitmap = bitmap,
+                    coloredBitmap = originalBitmap,
                     currentColor = currentColor.toArgb(),
                     currentTool = activeTool,
                     isMysteryMode = activeMysteryMode,
@@ -330,6 +353,7 @@ fun FilterItem(
 fun ToolBar(
     currentTool: Tool,
     onToolSelected: (Tool) -> Unit,
+    colors: List<Color>,
     currentColor: Color,
     onColorSelected: (Color) -> Unit,
     onUndo: () -> Unit,
@@ -356,6 +380,7 @@ fun ToolBar(
         }
 
         ColorPicker(
+            colors = colors,
             selectedColor = currentColor,
             onColorSelected = onColorSelected
         )
@@ -389,11 +414,14 @@ fun ToolButton(
 
 @Composable
 fun ColorPicker(
+    colors: List<Color>,
     selectedColor: Color,
     onColorSelected: (Color) -> Unit
 ) {
-    val colors = listOf(Color.Red, Color.Yellow, Color.Green, Color.Blue, Color.Magenta, Color.Cyan, Color.Black)
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Row(
+        modifier = Modifier.horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
         colors.forEach { color ->
             Box(
                 modifier = Modifier
