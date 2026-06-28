@@ -7,6 +7,7 @@ import android.graphics.Paint
 import android.graphics.Path
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -35,6 +36,7 @@ enum class Tool {
 @Composable
 fun ColoringCanvas(
     baseBitmap: Bitmap,
+    outlineBitmap: Bitmap,
     currentColor: Int,
     currentTool: Tool,
     isMysteryMode: Boolean,
@@ -71,12 +73,21 @@ fun ColoringCanvas(
         undoRedoManager.currentHistory.forEach { action ->
             when (action.type) {
                 com.example.rainbowdrop.data.ActionType.DRAW -> {
-                    brushPaint.color = action.color
+                    if (isMysteryMode) {
+                        brushPaint.shader = android.graphics.BitmapShader(
+                            baseBitmap,
+                            android.graphics.Shader.TileMode.CLAMP,
+                            android.graphics.Shader.TileMode.CLAMP
+                        )
+                    } else {
+                        brushPaint.shader = null
+                        brushPaint.color = action.color
+                    }
                     action.path?.let { coloringCanvas.drawPath(it, brushPaint) }
                 }
                 com.example.rainbowdrop.data.ActionType.FILL -> {
                     if (action.x != null && action.y != null) {
-                        floodFill(coloringBitmap, baseBitmap, action.x, action.y, action.color)
+                        floodFill(coloringBitmap, baseBitmap, action.x, action.y, action.color, isMysteryMode)
                     }
                 }
             }
@@ -140,7 +151,16 @@ fun ColoringCanvas(
                             currentPath.lineTo(bitmapOffset.x, bitmapOffset.y)
                             currentPoints.add(bitmapOffset.x to bitmapOffset.y)
                             
-                            brushPaint.color = currentColor
+                            if (isMysteryMode) {
+                                brushPaint.shader = android.graphics.BitmapShader(
+                                    baseBitmap,
+                                    android.graphics.Shader.TileMode.CLAMP,
+                                    android.graphics.Shader.TileMode.CLAMP
+                                )
+                            } else {
+                                brushPaint.shader = null
+                                brushPaint.color = currentColor
+                            }
                             coloringCanvas.drawPath(currentPath, brushPaint)
                             redrawTrigger++
                         },
@@ -149,15 +169,13 @@ fun ColoringCanvas(
                         }
                     )
                 } else if (currentTool == Tool.BUCKET) {
-                    detectDragGestures(
-                        onDrag = { _, _ -> /* Ignore drag in bucket mode */ },
-                        onDragEnd = { /* No-op */ },
-                        onDragStart = { startOffset ->
-                            val bitmapOffset = screenToBitmap(startOffset, scale, offset, size.width.toFloat(), size.height.toFloat(), baseBitmap.width.toFloat(), baseBitmap.height.toFloat())
+                    detectTapGestures(
+                        onTap = { pressOffset ->
+                            val bitmapOffset = screenToBitmap(pressOffset, scale, offset, size.width.toFloat(), size.height.toFloat(), baseBitmap.width.toFloat(), baseBitmap.height.toFloat())
                             val x = bitmapOffset.x.toInt()
                             val y = bitmapOffset.y.toInt()
                             if (x in 0 until baseBitmap.width && y in 0 until baseBitmap.height) {
-                                floodFill(coloringBitmap, baseBitmap, x, y, currentColor)
+                                floodFill(coloringBitmap, baseBitmap, x, y, currentColor, isMysteryMode)
                                 undoRedoManager.addAction(CanvasAction(com.example.rainbowdrop.data.ActionType.FILL, Tool.BUCKET, currentColor, x = x, y = y))
                                 redrawTrigger++
                             }
@@ -179,31 +197,49 @@ fun ColoringCanvas(
             val dummy = redrawTrigger // Dependency to trigger redraw
             
             drawContext.canvas.nativeCanvas.apply {
+                val screenWidth = size.width
+                val screenHeight = size.height
+                val bitmapWidth = baseBitmap.width.toFloat()
+                val bitmapHeight = baseBitmap.height.toFloat()
+                
+                val scaleFactor = minOf(screenWidth / bitmapWidth, screenHeight / bitmapHeight)
+                val actualBitmapWidth = bitmapWidth * scaleFactor
+                val actualBitmapHeight = bitmapHeight * scaleFactor
+                
+                val left = (screenWidth - actualBitmapWidth) / 2f
+                val top = (screenHeight - actualBitmapHeight) / 2f
+                
+                save()
+                translate(left, top)
+                scale(scaleFactor, scaleFactor)
+                
                 // Draw solid white paper background matching the image boundaries
                 val paperPaint = android.graphics.Paint().apply { color = android.graphics.Color.WHITE }
-                drawRect(0f, 0f, baseBitmap.width.toFloat(), baseBitmap.height.toFloat(), paperPaint)
+                drawRect(0f, 0f, bitmapWidth, bitmapHeight, paperPaint)
 
                 // Highlight active areas with checkerboard if using bucket and mask is ready
                 if (currentTool == Tool.BUCKET && maskBitmap != null) {
-                    val saveCount = saveLayer(0f, 0f, baseBitmap.width.toFloat(), baseBitmap.height.toFloat(), null)
+                    val saveCount = saveLayer(0f, 0f, bitmapWidth, bitmapHeight, null)
                     drawBitmap(maskBitmap!!, 0f, 0f, null)
                     val maskedCheckerPaint = android.graphics.Paint(checkerboardPaint).apply {
                         xfermode = android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.SRC_IN)
                     }
-                    drawRect(0f, 0f, baseBitmap.width.toFloat(), baseBitmap.height.toFloat(), maskedCheckerPaint)
+                    drawRect(0f, 0f, bitmapWidth, bitmapHeight, maskedCheckerPaint)
                     restoreToCount(saveCount)
                 }
 
                 // Draw user coloring
                 drawBitmap(coloringBitmap, 0f, 0f, null)
                 
-                // Draw base bitmap (outlines) on top
+                // Draw outline bitmap on top
                 if (!isMysteryMode) {
-                    drawBitmap(baseBitmap, 0f, 0f, null)
+                    drawBitmap(outlineBitmap, 0f, 0f, null)
                 } else {
-                    val paint = Paint().apply { alpha = 25 }
-                    drawBitmap(baseBitmap, 0f, 0f, paint)
+                    val paint = android.graphics.Paint().apply { alpha = 20 }
+                    drawBitmap(outlineBitmap, 0f, 0f, paint)
                 }
+                
+                restore()
             }
         }
     }
@@ -237,9 +273,17 @@ private fun screenToBitmap(
     return Offset(bitmapX, bitmapY)
 }
 
-private fun floodFill(coloring: Bitmap, base: Bitmap, x: Int, y: Int, targetColor: Int) {
+private fun floodFill(
+    coloring: Bitmap,
+    base: Bitmap,
+    x: Int,
+    y: Int,
+    targetColor: Int,
+    isMysteryMode: Boolean = false
+) {
     val srcColor = coloring.getPixel(x, y)
-    if (srcColor == targetColor) return
+    if (!isMysteryMode && srcColor == targetColor) return
+    if (isMysteryMode && srcColor != Color.TRANSPARENT) return
 
     val basePixel = base.getPixel(x, y)
     val baseAlpha = (basePixel shr 24) and 0xFF
@@ -263,7 +307,7 @@ private fun floodFill(coloring: Bitmap, base: Bitmap, x: Int, y: Int, targetColo
         if (coloringPixels[pos] == srcColor) {
             val baseA = (basePixels[pos] shr 24) and 0xFF
             if (baseA <= 120) { // Not an outline boundary
-                coloringPixels[pos] = targetColor
+                coloringPixels[pos] = if (isMysteryMode) basePixels[pos] else targetColor
                 if (cx > 0) queue.add(pos - 1)
                 if (cx < width - 1) queue.add(pos + 1)
                 if (cy > 0) queue.add(pos - width)

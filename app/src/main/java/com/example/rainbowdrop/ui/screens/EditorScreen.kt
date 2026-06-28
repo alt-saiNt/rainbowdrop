@@ -60,6 +60,7 @@ fun EditorScreen(
 
     var originalBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var processedBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var outlineBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var activeFilter by remember { mutableStateOf(filterType) }
     var activeTool by remember { mutableStateOf(tool) }
     var activeMysteryMode by remember { mutableStateOf(isMysteryMode) }
@@ -188,13 +189,21 @@ fun EditorScreen(
                 }
 
                 originalBitmap = mutableBitmap
-                processedBitmap = ImageProcessor.applyFilter(mutableBitmap, initialFilter)
+                val processed = ImageProcessor.applyFilter(mutableBitmap, initialFilter)
+                processedBitmap = processed
+                
+                val outlines = if (initialFilter == FilterType.INK_SKETCH || initialFilter == FilterType.TATTOO_FLASH) {
+                    processed
+                } else {
+                    ImageProcessor.getOutlines(processed)
+                }
 
                 // Dynamically extract colors from the original downscaled image
                 val paletteInts = ColorExtractor.extractPalette(mutableBitmap)
                 val paletteColors = paletteInts.map { Color(it) }
 
                 withContext(Dispatchers.Main) {
+                    outlineBitmap = outlines
                     extractedColors = paletteColors
                     if (paletteColors.isNotEmpty()) {
                         currentColor = paletteColors.first()
@@ -209,7 +218,14 @@ fun EditorScreen(
     LaunchedEffect(activeFilter, originalBitmap) {
         val original = originalBitmap ?: return@LaunchedEffect
         withContext(Dispatchers.IO) {
-            processedBitmap = ImageProcessor.applyFilter(original, activeFilter)
+            val processed = ImageProcessor.applyFilter(original, activeFilter)
+            processedBitmap = processed
+            val outlines = if (activeFilter == FilterType.INK_SKETCH || activeFilter == FilterType.TATTOO_FLASH) {
+                processed
+            } else {
+                ImageProcessor.getOutlines(processed)
+            }
+            outlineBitmap = outlines
         }
     }
 
@@ -298,16 +314,20 @@ fun EditorScreen(
                 .padding(innerPadding),
             contentAlignment = Alignment.Center
         ) {
-            processedBitmap?.let { bitmap ->
+            val outlines = outlineBitmap
+            if (outlines != null && processedBitmap != null) {
                 ColoringCanvas(
-                    baseBitmap = bitmap,
+                    baseBitmap = processedBitmap!!,
+                    outlineBitmap = outlines,
                     coloredBitmap = originalBitmap,
                     currentColor = currentColor.toArgb(),
                     currentTool = activeTool,
                     isMysteryMode = activeMysteryMode,
                     undoRedoManager = undoRedoManager
                 )
-            } ?: CircularProgressIndicator()
+            } else {
+                CircularProgressIndicator()
+            }
         }
     }
 }

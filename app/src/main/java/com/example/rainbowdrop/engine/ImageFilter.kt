@@ -33,6 +33,10 @@ object ImageProcessor {
         }
     }
 
+    fun getOutlines(bitmap: Bitmap): Bitmap {
+        return applyTattooFlash(bitmap)
+    }
+
     private fun applyInkSketch(src: Bitmap): Bitmap {
         val width = src.width
         val height = src.height

@@ -3,9 +3,7 @@ package com.example.rainbowdrop.ui.screens
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -34,13 +32,12 @@ fun RivetedCard(
                 shape = RoundedCornerShape(16.dp)
             )
             .border(width = 1.5.dp, color = borderColor, shape = RoundedCornerShape(16.dp))
-            .padding(16.dp)
     ) {
-        // Draw rivets in the 4 corners
-        Canvas(modifier = Modifier.fillMaxSize()) {
+        // Draw rivets in the 4 corners relative to the outer bounds of the card
+        Canvas(modifier = Modifier.matchParentSize()) {
             val rColor = Color(0xFF8A939E) // Silver rivet color
             val rRadius = 3.dp.toPx()
-            val offset = 6.dp.toPx()
+            val offset = 8.dp.toPx() // Spaced perfectly inside the corners
             
             // Top Left
             drawCircle(color = rColor, radius = rRadius, center = Offset(offset, offset))
@@ -51,6 +48,14 @@ fun RivetedCard(
             // Bottom Right
             drawCircle(color = rColor, radius = rRadius, center = Offset(size.width - offset, size.height - offset))
         }
-        content()
+        
+        // Inner container applying padding for content
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            content()
+        }
     }
 }
