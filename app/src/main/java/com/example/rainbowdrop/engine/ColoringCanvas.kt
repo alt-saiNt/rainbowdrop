@@ -1,26 +1,31 @@
 package com.example.rainbowdrop.engine
 
 import android.graphics.Bitmap
+import android.graphics.BitmapShader
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffXfermode
+import android.graphics.Shader
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
-import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
@@ -44,7 +49,7 @@ fun ColoringCanvas(
     modifier: Modifier = Modifier,
     coloredBitmap: Bitmap? = null
 ) {
-    var scale by remember { mutableStateOf(1f) }
+    var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
     val transformState = rememberTransformableState { zoomChange, offsetChange, _ ->
         scale *= zoomChange
@@ -66,7 +71,7 @@ fun ColoringCanvas(
         }
     }
 
-    var redrawTrigger by remember { mutableStateOf(0) }
+    var redrawTrigger by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(undoRedoManager.changeCount, baseBitmap) {
         coloringBitmap.eraseColor(Color.TRANSPARENT)
@@ -74,10 +79,10 @@ fun ColoringCanvas(
             when (action.type) {
                 com.example.rainbowdrop.data.ActionType.DRAW -> {
                     if (isMysteryMode) {
-                        brushPaint.shader = android.graphics.BitmapShader(
+                        brushPaint.shader = BitmapShader(
                             baseBitmap,
-                            android.graphics.Shader.TileMode.CLAMP,
-                            android.graphics.Shader.TileMode.CLAMP
+                            Shader.TileMode.CLAMP,
+                            Shader.TileMode.CLAMP
                         )
                     } else {
                         brushPaint.shader = null
@@ -87,7 +92,7 @@ fun ColoringCanvas(
                 }
                 com.example.rainbowdrop.data.ActionType.FILL -> {
                     if (action.x != null && action.y != null) {
-                        floodFill(coloringBitmap, baseBitmap, action.x, action.y, action.color, isMysteryMode)
+                        floodFill(coloringBitmap, outlineBitmap, baseBitmap, action.x, action.y, action.color, isMysteryMode)
                     }
                 }
             }
@@ -113,7 +118,7 @@ fun ColoringCanvas(
     // Checkered background for active color highlighting
     val checkerboardPaint = remember {
         Paint().apply {
-            shader = android.graphics.BitmapShader(
+            shader = BitmapShader(
                 Bitmap.createBitmap(20, 20, Bitmap.Config.ARGB_8888).apply {
                     val c = Canvas(this)
                     val p = Paint()
@@ -124,13 +129,13 @@ fun ColoringCanvas(
                     c.drawRect(10f, 0f, 20f, 10f, p)
                     c.drawRect(0f, 10f, 10f, 20f, p)
                 },
-                android.graphics.Shader.TileMode.REPEAT,
-                android.graphics.Shader.TileMode.REPEAT
+                Shader.TileMode.REPEAT,
+                Shader.TileMode.REPEAT
             )
         }
     }
 
-    BoxWithConstraints(
+    Box(
         modifier = modifier
             .fillMaxSize()
             .transformable(state = transformState)
@@ -152,10 +157,10 @@ fun ColoringCanvas(
                             currentPoints.add(bitmapOffset.x to bitmapOffset.y)
                             
                             if (isMysteryMode) {
-                                brushPaint.shader = android.graphics.BitmapShader(
+                                brushPaint.shader = BitmapShader(
                                     baseBitmap,
-                                    android.graphics.Shader.TileMode.CLAMP,
-                                    android.graphics.Shader.TileMode.CLAMP
+                                    Shader.TileMode.CLAMP,
+                                    Shader.TileMode.CLAMP
                                 )
                             } else {
                                 brushPaint.shader = null
@@ -175,7 +180,7 @@ fun ColoringCanvas(
                             val x = bitmapOffset.x.toInt()
                             val y = bitmapOffset.y.toInt()
                             if (x in 0 until baseBitmap.width && y in 0 until baseBitmap.height) {
-                                floodFill(coloringBitmap, baseBitmap, x, y, currentColor, isMysteryMode)
+                                floodFill(coloringBitmap, outlineBitmap, baseBitmap, x, y, currentColor, isMysteryMode)
                                 undoRedoManager.addAction(CanvasAction(com.example.rainbowdrop.data.ActionType.FILL, Tool.BUCKET, currentColor, x = x, y = y))
                                 redrawTrigger++
                             }
@@ -183,7 +188,8 @@ fun ColoringCanvas(
                     )
                 }
             }
-    ) {
+    ) 
+    {
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
@@ -194,7 +200,7 @@ fun ColoringCanvas(
                     translationY = offset.y
                 )
         ) {
-            val dummy = redrawTrigger // Dependency to trigger redraw
+            redrawTrigger // Dependency to trigger redraw
             
             drawContext.canvas.nativeCanvas.apply {
                 val screenWidth = size.width
@@ -214,15 +220,15 @@ fun ColoringCanvas(
                 scale(scaleFactor, scaleFactor)
                 
                 // Draw solid white paper background matching the image boundaries
-                val paperPaint = android.graphics.Paint().apply { color = android.graphics.Color.WHITE }
+            val paperPaint = Paint().apply { color = Color.WHITE }
                 drawRect(0f, 0f, bitmapWidth, bitmapHeight, paperPaint)
 
                 // Highlight active areas with checkerboard if using bucket and mask is ready
                 if (currentTool == Tool.BUCKET && maskBitmap != null) {
                     val saveCount = saveLayer(0f, 0f, bitmapWidth, bitmapHeight, null)
                     drawBitmap(maskBitmap!!, 0f, 0f, null)
-                    val maskedCheckerPaint = android.graphics.Paint(checkerboardPaint).apply {
-                        xfermode = android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.SRC_IN)
+                    val maskedCheckerPaint = Paint(checkerboardPaint).apply {
+                        xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_IN)
                     }
                     drawRect(0f, 0f, bitmapWidth, bitmapHeight, maskedCheckerPaint)
                     restoreToCount(saveCount)
@@ -235,7 +241,7 @@ fun ColoringCanvas(
                 if (!isMysteryMode) {
                     drawBitmap(outlineBitmap, 0f, 0f, null)
                 } else {
-                    val paint = android.graphics.Paint().apply { alpha = 20 }
+                    val paint = Paint().apply { alpha = 20 }
                     drawBitmap(outlineBitmap, 0f, 0f, paint)
                 }
                 
@@ -275,6 +281,7 @@ private fun screenToBitmap(
 
 private fun floodFill(
     coloring: Bitmap,
+    outline: Bitmap,
     base: Bitmap,
     x: Int,
     y: Int,
@@ -285,15 +292,17 @@ private fun floodFill(
     if (!isMysteryMode && srcColor == targetColor) return
     if (isMysteryMode && srcColor != Color.TRANSPARENT) return
 
-    val basePixel = base.getPixel(x, y)
-    val baseAlpha = (basePixel shr 24) and 0xFF
-    if (baseAlpha > 120) return // Tap directly on an outline boundary
+    val outlinePixel = outline.getPixel(x, y)
+    val outlineAlpha = (outlinePixel shr 24) and 0xFF
+    if (outlineAlpha > 120) return // Tap directly on an outline boundary
 
     val width = coloring.width
     val height = coloring.height
     val coloringPixels = IntArray(width * height)
+    val outlinePixels = IntArray(width * height)
     val basePixels = IntArray(width * height)
     coloring.getPixels(coloringPixels, 0, width, 0, 0, width, height)
+    outline.getPixels(outlinePixels, 0, width, 0, 0, width, height)
     base.getPixels(basePixels, 0, width, 0, 0, width, height)
 
     val queue: Queue<Int> = LinkedList()
@@ -305,8 +314,8 @@ private fun floodFill(
         val cy = pos / width
         
         if (coloringPixels[pos] == srcColor) {
-            val baseA = (basePixels[pos] shr 24) and 0xFF
-            if (baseA <= 120) { // Not an outline boundary
+            val outA = (outlinePixels[pos] shr 24) and 0xFF
+            if (outA <= 120) { // Not an outline boundary
                 coloringPixels[pos] = if (isMysteryMode) basePixels[pos] else targetColor
                 if (cx > 0) queue.add(pos - 1)
                 if (cx < width - 1) queue.add(pos + 1)
@@ -347,7 +356,7 @@ private fun generateHighlightMask(
         val bG = (bColor shr 8) and 0xFF
         val bB = bColor and 0xFF
         
-        val dist = Math.abs(bR - targetR) + Math.abs(bG - targetG) + Math.abs(bB - targetB)
+        val dist = kotlin.math.abs(bR - targetR) + kotlin.math.abs(bG - targetG) + kotlin.math.abs(bB - targetB)
         if (dist < 45) {
             maskPixels[i] = 0xFFFFFFFF.toInt()
         }
