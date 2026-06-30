@@ -292,10 +292,6 @@ private fun floodFill(
     if (!isMysteryMode && srcColor == targetColor) return
     if (isMysteryMode && srcColor != Color.TRANSPARENT) return
 
-    val outlinePixel = outline.getPixel(x, y)
-    val outlineAlpha = (outlinePixel shr 24) and 0xFF
-    if (outlineAlpha > 120) return // Tap directly on an outline boundary
-
     val width = coloring.width
     val height = coloring.height
     val coloringPixels = IntArray(width * height)
@@ -304,6 +300,30 @@ private fun floodFill(
     coloring.getPixels(coloringPixels, 0, width, 0, 0, width, height)
     outline.getPixels(outlinePixels, 0, width, 0, 0, width, height)
     base.getPixels(basePixels, 0, width, 0, 0, width, height)
+
+    val radius = 2 // Closes gaps up to 4 pixels wide
+
+    // Helper to check if a pixel is near any outline boundary (on-the-fly dilation)
+    fun isNearOutline(cx: Int, cy: Int): Boolean {
+        for (dy in -radius..radius) {
+            val ny = cy + dy
+            if (ny in 0 until height) {
+                for (dx in -radius..radius) {
+                    val nx = cx + dx
+                    if (nx in 0 until width) {
+                        val pixel = outlinePixels[ny * width + nx]
+                        val alpha = (pixel shr 24) and 0xFF
+                        if (alpha > 120) {
+                            return true
+                        }
+                    }
+                }
+            }
+        }
+        return false
+    }
+
+    if (isNearOutline(x, y)) return // Tap directly on or near an outline boundary
 
     val queue: Queue<Int> = LinkedList()
     queue.add(y * width + x)
@@ -314,8 +334,7 @@ private fun floodFill(
         val cy = pos / width
         
         if (coloringPixels[pos] == srcColor) {
-            val outA = (outlinePixels[pos] shr 24) and 0xFF
-            if (outA <= 120) { // Not an outline boundary
+            if (!isNearOutline(cx, cy)) { // On-the-fly dilation boundary check
                 coloringPixels[pos] = if (isMysteryMode) basePixels[pos] else targetColor
                 if (cx > 0) queue.add(pos - 1)
                 if (cx < width - 1) queue.add(pos + 1)
