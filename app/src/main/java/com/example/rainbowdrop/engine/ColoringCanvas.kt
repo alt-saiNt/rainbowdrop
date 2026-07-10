@@ -47,7 +47,9 @@ fun ColoringCanvas(
     isMysteryMode: Boolean,
     undoRedoManager: UndoRedoManager,
     modifier: Modifier = Modifier,
-    coloredBitmap: Bitmap? = null
+    coloredBitmap: Bitmap? = null,
+    shadingBitmap: Bitmap? = null,
+    paletteColors: List<Int> = emptyList()
 ) {
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
@@ -73,14 +75,14 @@ fun ColoringCanvas(
 
     var redrawTrigger by remember { mutableIntStateOf(0) }
 
-    LaunchedEffect(undoRedoManager.changeCount, baseBitmap) {
+    LaunchedEffect(undoRedoManager.changeCount, baseBitmap, coloredBitmap) {
         coloringBitmap.eraseColor(Color.TRANSPARENT)
         undoRedoManager.currentHistory.forEach { action ->
             when (action.type) {
                 com.example.rainbowdrop.data.ActionType.DRAW -> {
                     if (isMysteryMode) {
                         brushPaint.shader = BitmapShader(
-                            baseBitmap,
+                            coloredBitmap ?: baseBitmap,
                             Shader.TileMode.CLAMP,
                             Shader.TileMode.CLAMP
                         )
@@ -92,7 +94,7 @@ fun ColoringCanvas(
                 }
                 com.example.rainbowdrop.data.ActionType.FILL -> {
                     if (action.x != null && action.y != null) {
-                        floodFill(coloringBitmap, outlineBitmap, baseBitmap, action.x, action.y, action.color, isMysteryMode)
+                        floodFill(coloringBitmap, outlineBitmap, coloredBitmap ?: baseBitmap, action.x, action.y, action.color, isMysteryMode)
                     }
                 }
             }
@@ -102,13 +104,13 @@ fun ColoringCanvas(
 
     var maskBitmap by remember { mutableStateOf<Bitmap?>(null) }
 
-    LaunchedEffect(currentColor, baseBitmap, redrawTrigger, currentTool, coloredBitmap) {
+    LaunchedEffect(currentColor, baseBitmap, redrawTrigger, currentTool, coloredBitmap, paletteColors) {
         if (currentTool != Tool.BUCKET) {
             maskBitmap = null
             return@LaunchedEffect
         }
         withContext(Dispatchers.Default) {
-            val mask = generateHighlightMask(coloredBitmap ?: baseBitmap, coloringBitmap, currentColor)
+            val mask = generateHighlightMask(coloredBitmap ?: baseBitmap, coloringBitmap, currentColor, paletteColors)
             withContext(Dispatchers.Main) {
                 maskBitmap = mask
             }
@@ -158,7 +160,7 @@ fun ColoringCanvas(
                             
                             if (isMysteryMode) {
                                 brushPaint.shader = BitmapShader(
-                                    baseBitmap,
+                                    coloredBitmap ?: baseBitmap,
                                     Shader.TileMode.CLAMP,
                                     Shader.TileMode.CLAMP
                                 )
@@ -180,9 +182,20 @@ fun ColoringCanvas(
                             val x = bitmapOffset.x.toInt()
                             val y = bitmapOffset.y.toInt()
                             if (x in 0 until baseBitmap.width && y in 0 until baseBitmap.height) {
-                                floodFill(coloringBitmap, outlineBitmap, baseBitmap, x, y, currentColor, isMysteryMode)
-                                undoRedoManager.addAction(CanvasAction(com.example.rainbowdrop.data.ActionType.FILL, Tool.BUCKET, currentColor, x = x, y = y))
-                                redrawTrigger++
+                                val colorSource = coloredBitmap ?: baseBitmap
+                                val targetPixelColor = colorSource.getPixel(x, y)
+                                val closestColor = getClosestPaletteColor(targetPixelColor, paletteColors)
+                                
+                                // Only allow bucket fill if selected color matches closest palette color (or mystery mode)
+                                if (isMysteryMode || isColorMatch(currentColor, closestColor)) {
+                                    val currentPixelColor = coloringBitmap.getPixel(x, y)
+                                    // Lock check: if already colored, don't overwrite (unless mystery mode)
+                                    if (currentPixelColor == Color.TRANSPARENT || isMysteryMode) {
+                                        floodFill(coloringBitmap, outlineBitmap, colorSource, x, y, currentColor, isMysteryMode)
+                                        undoRedoManager.addAction(CanvasAction(com.example.rainbowdrop.data.ActionType.FILL, Tool.BUCKET, currentColor, x = x, y = y))
+                                        redrawTrigger++
+                                    }
+                                }
                             }
                         }
                     )
@@ -236,6 +249,17 @@ fun ColoringCanvas(
 
                 // Draw user coloring
                 drawBitmap(coloringBitmap, 0f, 0f, null)
+
+                // Draw shading details on top of colored areas
+                if (shadingBitmap != null) {
+                    val saveCount = saveLayer(0f, 0f, bitmapWidth, bitmapHeight, null)
+                    drawBitmap(coloringBitmap, 0f, 0f, null)
+                    val shadingPaint = Paint().apply {
+                        xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_ATOP)
+                    }
+                    drawBitmap(shadingBitmap, 0f, 0f, shadingPaint)
+                    restoreToCount(saveCount)
+                }
                 
                 // Draw outline bitmap on top
                 if (!isMysteryMode) {
@@ -349,7 +373,8 @@ private fun floodFill(
 private fun generateHighlightMask(
     base: Bitmap,
     coloring: Bitmap,
-    targetColor: Int
+    targetColor: Int,
+    paletteColors: List<Int>
 ): Bitmap {
     val width = base.width
     val height = base.height
@@ -362,25 +387,54 @@ private fun generateHighlightMask(
     
     val maskPixels = IntArray(width * height)
     
-    val targetR = (targetColor shr 16) and 0xFF
-    val targetG = (targetColor shr 8) and 0xFF
-    val targetB = targetColor and 0xFF
-    
     for (i in basePixels.indices) {
         val cColor = coloringPixels[i]
         if (((cColor shr 24) and 0xFF) > 0) continue
         
         val bColor = basePixels[i]
-        val bR = (bColor shr 16) and 0xFF
-        val bG = (bColor shr 8) and 0xFF
-        val bB = bColor and 0xFF
-        
-        val dist = kotlin.math.abs(bR - targetR) + kotlin.math.abs(bG - targetG) + kotlin.math.abs(bB - targetB)
-        if (dist < 45) {
+        val closest = getClosestPaletteColor(bColor, paletteColors)
+        if (closest == targetColor) {
             maskPixels[i] = 0xFFFFFFFF.toInt()
         }
     }
     
     mask.setPixels(maskPixels, 0, width, 0, 0, width, height)
     return mask
+}
+
+private fun getClosestPaletteColor(pixelColor: Int, palette: List<Int>): Int {
+    if (palette.isEmpty()) return pixelColor
+    var minIdx = 0
+    var minDist = Double.MAX_VALUE
+    
+    val rP = (pixelColor shr 16) and 0xFF
+    val gP = (pixelColor shr 8) and 0xFF
+    val bP = pixelColor and 0xFF
+    
+    for (i in palette.indices) {
+        val color = palette[i]
+        val r = (color shr 16) and 0xFF
+        val g = (color shr 8) and 0xFF
+        val b = color and 0xFF
+        
+        val dist = kotlin.math.abs(r - rP) + kotlin.math.abs(g - gP) + kotlin.math.abs(b - bP)
+        if (dist < minDist) {
+            minDist = dist.toDouble()
+            minIdx = i
+        }
+    }
+    return palette[minIdx]
+}
+
+private fun isColorMatch(colorA: Int, colorB: Int): Boolean {
+    val rA = (colorA shr 16) and 0xFF
+    val gA = (colorA shr 8) and 0xFF
+    val bA = colorA and 0xFF
+    
+    val rB = (colorB shr 16) and 0xFF
+    val gB = (colorB shr 8) and 0xFF
+    val bB = colorB and 0xFF
+    
+    val dist = kotlin.math.abs(rA - rB) + kotlin.math.abs(gA - gB) + kotlin.math.abs(bA - bB)
+    return dist < 30 // Strict match since we compare against a quantized palette color
 }

@@ -34,7 +34,10 @@ object ImageProcessor {
     }
 
     fun getOutlines(bitmap: Bitmap): Bitmap {
-        return applyTattooFlash(bitmap)
+        val blurred = boxBlur(bitmap, 8)
+        val outlines = applyTattooFlash(blurred)
+        blurred.recycle()
+        return outlines
     }
 
     private fun applyInkSketch(src: Bitmap): Bitmap {
