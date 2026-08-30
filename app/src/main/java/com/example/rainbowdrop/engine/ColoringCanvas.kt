@@ -184,10 +184,9 @@ fun ColoringCanvas(
                             if (x in 0 until baseBitmap.width && y in 0 until baseBitmap.height) {
                                 val colorSource = coloredBitmap ?: baseBitmap
                                 val targetPixelColor = colorSource.getPixel(x, y)
-                                val closestColor = getClosestPaletteColor(targetPixelColor, paletteColors)
                                 
-                                // Only allow bucket fill if selected color matches closest palette color (or mystery mode)
-                                if (isMysteryMode || isColorMatch(currentColor, closestColor)) {
+                                // Only allow bucket fill if selected color matches target pixel color (or mystery mode)
+                                if (isMysteryMode || isColorMatch(currentColor, targetPixelColor)) {
                                     val currentPixelColor = coloringBitmap.getPixel(x, y)
                                     // Lock check: if already colored, don't overwrite (unless mystery mode)
                                     if (currentPixelColor == Color.TRANSPARENT || isMysteryMode) {
@@ -392,8 +391,7 @@ private fun generateHighlightMask(
         if (((cColor shr 24) and 0xFF) > 0) continue
         
         val bColor = basePixels[i]
-        val closest = getClosestPaletteColor(bColor, paletteColors)
-        if (closest == targetColor) {
+        if (isColorMatch(targetColor, bColor)) {
             maskPixels[i] = 0xFFFFFFFF.toInt()
         }
     }
@@ -436,5 +434,5 @@ private fun isColorMatch(colorA: Int, colorB: Int): Boolean {
     val bB = colorB and 0xFF
     
     val dist = kotlin.math.abs(rA - rB) + kotlin.math.abs(gA - gB) + kotlin.math.abs(bA - bB)
-    return dist < 30 // Strict match since we compare against a quantized palette color
+    return dist < 120 // Forgiving matching threshold for color families
 }
