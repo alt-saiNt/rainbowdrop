@@ -10,39 +10,36 @@ import kotlin.math.sqrt
 object ColorExtractor {
 
     /**
-     * Extracts a dynamic, sorted color palette from the given Bitmap using Adaptive CIELAB K-Means.
+     * Extracts a balanced, distinct color palette representing all regions of the image using K-Means clustering.
+     * Only retains colors with genuine visual presence (prunes isolated outlier noise).
      *
      * @param bitmap The source image.
-     * @param deltaEThreshold The perceptual distance limit (Delta-E) to register a new color center.
-     *                         Smaller values (~6-8) yield more detailed colors; larger values (~12-15) yield fewer.
-     * @param maxColors The absolute maximum number of colors to extract.
+     * @param targetColorCount Target number of distinct colors to extract (typically 12-18).
      * @return A list of ARGB colors sorted chromatically.
      */
     fun extractPalette(
         bitmap: Bitmap,
-        deltaEThreshold: Double = 8.0,
-        maxColors: Int = 200
+        targetColorCount: Int = 16
     ): List<Int> {
-        // 1. Downsample the image to a standard processing grid (e.g., 64x64) for swift math
-        val sampleSize = 64
-        val scaled = Bitmap.createScaledBitmap(bitmap, sampleSize, sampleSize, false)
+        val sampleSize = 96
+        val scaled = Bitmap.createScaledBitmap(bitmap, sampleSize, sampleSize, true)
         val width = scaled.width
         val height = scaled.height
         
         val pixels = IntArray(width * height)
         scaled.getPixels(pixels, 0, width, 0, 0, width, height)
+        if (scaled != bitmap) {
+            scaled.recycle()
+        }
         
-        // 2. Convert all pixels to LAB space
         val labPoints = ArrayList<DoubleArray>(pixels.size)
         for (color in pixels) {
             val a = (color shr 24) and 0xFF
-            // Ignore transparent pixels if there are any
             if (a < 50) continue
             
             val r = (color shr 16) and 0xFF
             val g = (color shr 8) and 0xFF
             val b = color and 0xFF
-            
             labPoints.add(rgbToLab(r, g, b))
         }
 
@@ -50,10 +47,8 @@ object ColorExtractor {
             return listOf(Color.BLACK, Color.WHITE)
         }
 
-        // 3. Find Adaptive Initial Centers (modified K-Means++ initialization)
+        // K-Means++ Initialization
         val centers = ArrayList<DoubleArray>()
-        
-        // Use average color of the image as the first seed center
         var sumL = 0.0
         var sumA = 0.0
         var sumB = 0.0
@@ -62,18 +57,11 @@ object ColorExtractor {
             sumA += p[1]
             sumB += p[2]
         }
-        val avgCenter = doubleArrayOf(
-            sumL / labPoints.size,
-            sumA / labPoints.size,
-            sumB / labPoints.size
-        )
-        centers.add(avgCenter)
+        centers.add(doubleArrayOf(sumL / labPoints.size, sumA / labPoints.size, sumB / labPoints.size))
 
-        // Pre-allocate distance array to track min distance of each point to any chosen center
         val minDists = DoubleArray(labPoints.size) { Double.MAX_VALUE }
 
-        // Spawn centers until we can't find anything distinct enough or we hit maxColors
-        while (centers.size < maxColors) {
+        while (centers.size < targetColorCount) {
             val latestCenter = centers.last()
             var maxDistVal = -1.0
             var candidateIdx = -1
@@ -89,27 +77,218 @@ object ColorExtractor {
                 }
             }
 
-            // If the furthest point is closer than our perceptual threshold, stop spawning centers
-            if (maxDistVal < deltaEThreshold || candidateIdx == -1) {
+            if (maxDistVal < 5.0 || candidateIdx == -1) {
                 break
             }
 
             centers.add(labPoints[candidateIdx])
         }
 
-        // 4. Run K-Means to settle cluster centers into their local peaks
-        val finalLabCenters = runKMeans(labPoints, centers, maxIterations = 12)
+        // Run K-Means
+        val finalLabCenters = runKMeans(labPoints, centers, maxIterations = 10)
 
-        // 5. Convert centers back to RGB, filter out noise/duplicates, and sort
+        // Count pixel representation per cluster center
+        val clusterCounts = IntArray(finalLabCenters.size)
+        for (p in labPoints) {
+            var minIdx = 0
+            var minDist = Double.MAX_VALUE
+            for (i in finalLabCenters.indices) {
+                val d = deltaE(p, finalLabCenters[i])
+                if (d < minDist) {
+                    minDist = d
+                    minIdx = i
+                }
+            }
+            clusterCounts[minIdx]++
+        }
+
+        // Discard clusters representing < 2.0% of image pixels if we have enough colors
+        val minPresenceThreshold = (labPoints.size * 0.020).toInt()
         val rgbColors = ArrayList<Int>()
-        for (lab in finalLabCenters) {
+
+        for (i in finalLabCenters.indices) {
+            if (clusterCounts[i] < minPresenceThreshold && finalLabCenters.size > 6) {
+                continue // Prune insignificant speckle colors
+            }
+            val lab = finalLabCenters[i]
             val rgb = labToRgb(lab[0], lab[1], lab[2])
-            if (!rgbColors.contains(rgb)) {
+            val isDuplicate = rgbColors.any { existingRgb ->
+                val (eL, eA, eB) = rgbToLab((existingRgb shr 16) and 0xFF, (existingRgb shr 8) and 0xFF, existingRgb and 0xFF)
+                deltaE(doubleArrayOf(eL, eA, eB), lab) < 6.0
+            }
+            if (!isDuplicate) {
                 rgbColors.add(rgb)
             }
         }
 
+        if (rgbColors.isEmpty()) {
+            rgbColors.add(Color.DKGRAY)
+        }
+
         return sortColors(rgbColors)
+    }
+
+    /**
+     * Precomputes a pixel-to-palette index lookup map with spatial denoising.
+     * Absorbs isolated sand grains and micro-islands into neighboring dominant colors.
+     */
+    fun generateColorMap(bitmap: Bitmap, palette: List<Int>, minIslandSize: Int = 90): IntArray {
+        val width = bitmap.width
+        val height = bitmap.height
+        val pixels = IntArray(width * height)
+        bitmap.getPixels(pixels, 0, width, 0, 0, width, height)
+
+        val rawMap = IntArray(width * height)
+        for (i in pixels.indices) {
+            val color = pixels[i]
+            rawMap[i] = closestPaletteIndex(color, palette)
+        }
+
+        // Smooth color map to eliminate single-pixel chatter and absorb tiny islands
+        return smoothColorMap(rawMap, width, height, palette.size, minIslandSize)
+    }
+
+    /**
+     * Multi-pass spatial smoothing engine:
+     * Pass 1: 3x3 Majority / Mode filter to eliminate salt-and-pepper pixel noise.
+     * Pass 2: Connected Component Island Absorption (merges islands < minIslandSize into adjacent color).
+     * Pass 3: Edge-sealing majority pass.
+     */
+    private fun smoothColorMap(
+        rawMap: IntArray,
+        width: Int,
+        height: Int,
+        paletteSize: Int,
+        minIslandSize: Int
+    ): IntArray {
+        val size = width * height
+        val temp = rawMap.clone()
+        val neighborCounts = IntArray(max(32, paletteSize + 1))
+
+        // Pass 1: 3x3 Majority / Mode Filter
+        val pass1 = IntArray(size)
+        for (y in 0 until height) {
+            val yOffset = y * width
+            for (x in 0 until width) {
+                val current = temp[yOffset + x]
+                var maxCount = 0
+                var majorityColor = current
+
+                for (dy in -1..1) {
+                    val ny = y + dy
+                    if (ny in 0 until height) {
+                        val row = ny * width
+                        for (dx in -1..1) {
+                            val nx = x + dx
+                            if (nx in 0 until width) {
+                                val c = temp[row + nx]
+                                neighborCounts[c]++
+                                if (neighborCounts[c] > maxCount) {
+                                    maxCount = neighborCounts[c]
+                                    majorityColor = c
+                                }
+                            }
+                        }
+                    }
+                }
+
+                pass1[yOffset + x] = if (maxCount >= 5) majorityColor else current
+
+                // Reset counts
+                for (dy in -1..1) {
+                    val ny = y + dy
+                    if (ny in 0 until height) {
+                        val row = ny * width
+                        for (dx in -1..1) {
+                            val nx = x + dx
+                            if (nx in 0 until width) {
+                                neighborCounts[temp[row + nx]] = 0
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Pass 2: Connected Component Island Absorption
+        val visited = BooleanArray(size)
+        val queue = java.util.ArrayDeque<Int>()
+        val component = ArrayList<Int>(minIslandSize * 2)
+
+        for (i in 0 until size) {
+            if (visited[i]) continue
+            val color = pass1[i]
+            component.clear()
+            queue.clear()
+
+            visited[i] = true
+            queue.add(i)
+
+            val neighborFreq = HashMap<Int, Int>()
+
+            while (queue.isNotEmpty()) {
+                val pos = queue.removeFirst()
+                component.add(pos)
+                val cy = pos / width
+                val cx = pos % width
+
+                val left = if (cx > 0) pos - 1 else -1
+                val right = if (cx < width - 1) pos + 1 else -1
+                val up = if (cy > 0) pos - width else -1
+                val down = if (cy < height - 1) pos + width else -1
+
+                for (n in intArrayOf(left, right, up, down)) {
+                    if (n != -1) {
+                        if (pass1[n] == color) {
+                            if (!visited[n]) {
+                                visited[n] = true
+                                queue.add(n)
+                            }
+                        } else {
+                            neighborFreq[pass1[n]] = (neighborFreq[pass1[n]] ?: 0) + 1
+                        }
+                    }
+                }
+            }
+
+            // If island is smaller than threshold, absorb into the dominant adjacent neighbor!
+            if (component.size < minIslandSize && neighborFreq.isNotEmpty()) {
+                val bestNeighborColor = neighborFreq.maxByOrNull { it.value }?.key ?: color
+                for (idx in component) {
+                    pass1[idx] = bestNeighborColor
+                }
+            }
+        }
+
+        return pass1
+    }
+
+    /**
+     * Fast perceptual Redmean distance calculation to determine closest palette color.
+     */
+    fun closestPaletteIndex(color: Int, palette: List<Int>): Int {
+        if (palette.isEmpty()) return 0
+        val r = (color shr 16) and 0xFF
+        val g = (color shr 8) and 0xFF
+        val b = color and 0xFF
+        var bestIdx = 0
+        var bestDist = Long.MAX_VALUE
+        for (i in palette.indices) {
+            val p = palette[i]
+            val pr = (p shr 16) and 0xFF
+            val pg = (p shr 8) and 0xFF
+            val pb = p and 0xFF
+            val dr = (r - pr).toLong()
+            val dg = (g - pg).toLong()
+            val db = (b - pb).toLong()
+            val rmean = (r + pr) / 2
+            val dist = (((512 + rmean) * dr * dr) shr 8) + 4 * dg * dg + (((767 - rmean) * db * db) shr 8)
+            if (dist < bestDist) {
+                bestDist = dist
+                bestIdx = i
+            }
+        }
+        return bestIdx
     }
 
     // --- COLOR SPACE MATH (RGB -> XYZ -> CIELAB -> XYZ -> RGB) ---

@@ -73,6 +73,7 @@ fun EditorScreen(
     var activeMysteryMode by remember { mutableStateOf(isMysteryMode) }
     var currentColor by remember { mutableStateOf(Color.Red) }
     var extractedColors by remember { mutableStateOf<List<Color>>(emptyList()) }
+    var colorMap by remember { mutableStateOf<IntArray?>(null) }
     var isExporting by remember { mutableStateOf(false) }
     var exportProgress by remember { mutableStateOf(0f) }
 
@@ -80,11 +81,8 @@ fun EditorScreen(
     var recenterTrigger by remember { mutableIntStateOf(0) }
     var showMenu by remember { mutableStateOf(false) }
 
-    val defaultPalette = remember {
-        listOf(Color(0xFFEF4444), Color(0xFFF59E0B), Color(0xFF10B981), Color(0xFF3B82F6), Color(0xFF8B5CF6), Color(0xFFEC4899), Color(0xFFFFFFFF), Color(0xFF1F2937))
-    }
     val displayColors = remember(extractedColors) {
-        extractedColors.ifEmpty { defaultPalette }
+        extractedColors.ifEmpty { listOf(Color(0xFF3B82F6), Color(0xFF10B981), Color(0xFFF59E0B)) }
     }
 
     var currentProjectId by remember { mutableStateOf<Long?>(null) }
@@ -211,13 +209,16 @@ fun EditorScreen(
                     null
                 }
 
-                val paletteInts = ColorExtractor.extractPalette(mutableBitmap)
+                val targetForPalette = processed
+                val paletteInts = ColorExtractor.extractPalette(targetForPalette, targetColorCount = 18)
                 val paletteColors = paletteInts.map { Color(it) }
+                val map = ColorExtractor.generateColorMap(targetForPalette, paletteInts)
 
                 withContext(Dispatchers.Main) {
                     outlineBitmap = outlines
                     shadingBitmap = shading
                     extractedColors = paletteColors
+                    colorMap = map
                     if (paletteColors.isNotEmpty()) {
                         currentColor = paletteColors.first()
                     }
@@ -239,9 +240,20 @@ fun EditorScreen(
             } else {
                 null
             }
+
+            val targetForPalette = processed
+            val paletteInts = ColorExtractor.extractPalette(targetForPalette, targetColorCount = 18)
+            val paletteColors = paletteInts.map { Color(it) }
+            val map = ColorExtractor.generateColorMap(targetForPalette, paletteInts)
+
             withContext(Dispatchers.Main) {
                 outlineBitmap = outlines
                 shadingBitmap = shading
+                extractedColors = paletteColors
+                colorMap = map
+                if (paletteColors.isNotEmpty() && !paletteColors.contains(currentColor)) {
+                    currentColor = paletteColors.first()
+                }
             }
         }
     }
@@ -551,6 +563,7 @@ fun EditorScreen(
         ) {
             val outlines = outlineBitmap
             if (outlines != null && processedBitmap != null) {
+                val isFreeform = (activeTool == Tool.BRUSH && !activeMysteryMode)
                 ColoringCanvas(
                     baseBitmap = processedBitmap!!,
                     outlineBitmap = outlines,
@@ -561,6 +574,8 @@ fun EditorScreen(
                     undoRedoManager = undoRedoManager,
                     shadingBitmap = shadingBitmap,
                     paletteColors = displayColors.map { it.toArgb() },
+                    colorMap = colorMap,
+                    isFreeformMode = isFreeform,
                     isPeeking = isPeeking,
                     recenterTrigger = recenterTrigger
                 )

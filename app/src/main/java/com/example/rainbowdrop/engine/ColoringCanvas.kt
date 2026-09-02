@@ -52,6 +52,8 @@ fun ColoringCanvas(
     coloredBitmap: Bitmap? = null,
     shadingBitmap: Bitmap? = null,
     paletteColors: List<Int> = emptyList(),
+    colorMap: IntArray? = null,
+    isFreeformMode: Boolean = false,
     isPeeking: Boolean = false,
     recenterTrigger: Int = 0
 ) {
@@ -95,7 +97,7 @@ fun ColoringCanvas(
         undoRedoManager.currentHistory.forEach { action ->
             when (action.type) {
                 ActionType.DRAW -> {
-                    if (isMysteryMode) {
+                    if (isMysteryMode || !isFreeformMode) {
                         brushPaint.shader = BitmapShader(
                             colorSource,
                             Shader.TileMode.CLAMP,
@@ -110,13 +112,16 @@ fun ColoringCanvas(
                 ActionType.FILL -> {
                     if (action.x != null && action.y != null) {
                         fastFloodFill(
-                            coloringBitmap,
-                            outlineBitmap,
-                            colorSource,
-                            action.x,
-                            action.y,
-                            action.color,
-                            isMysteryMode
+                            coloring = coloringBitmap,
+                            outline = outlineBitmap,
+                            base = colorSource,
+                            startX = action.x,
+                            startY = action.y,
+                            targetColor = action.color,
+                            paletteColors = paletteColors,
+                            colorMap = colorMap,
+                            isMysteryMode = isMysteryMode,
+                            isFreeform = isFreeformMode
                         )
                     }
                 }
@@ -127,18 +132,19 @@ fun ColoringCanvas(
 
     var maskBitmap by remember { mutableStateOf<Bitmap?>(null) }
 
-    // Active color checkerboard highlight mask
-    LaunchedEffect(currentColor, baseBitmap, redrawTrigger, currentTool, coloredBitmap, paletteColors) {
-        if (currentTool != Tool.BUCKET) {
+    // Active color checkerboard highlight mask for guided coloring
+    LaunchedEffect(currentColor, baseBitmap, redrawTrigger, currentTool, coloredBitmap, paletteColors, colorMap, isFreeformMode) {
+        if (isFreeformMode || (currentTool != Tool.BUCKET && !isMysteryMode)) {
             maskBitmap = null
             return@LaunchedEffect
         }
         withContext(Dispatchers.Default) {
             val mask = generateHighlightMask(
-                coloredBitmap ?: baseBitmap,
-                coloringBitmap,
-                currentColor,
-                paletteColors
+                base = coloredBitmap ?: baseBitmap,
+                coloring = coloringBitmap,
+                targetColor = currentColor,
+                paletteColors = paletteColors,
+                colorMap = colorMap
             )
             withContext(Dispatchers.Main) {
                 maskBitmap = mask
@@ -152,8 +158,8 @@ fun ColoringCanvas(
             shader = BitmapShader(
                 Bitmap.createBitmap(24, 24, Bitmap.Config.ARGB_8888).apply {
                     val c = Canvas(this)
-                    val pDark = Paint().apply { color = Color.rgb(45, 45, 52) }
-                    val pLight = Paint().apply { color = Color.rgb(90, 90, 100) }
+                    val pDark = Paint().apply { color = Color.rgb(40, 44, 52) }
+                    val pLight = Paint().apply { color = Color.rgb(88, 96, 110) }
                     c.drawRect(0f, 0f, 12f, 12f, pDark)
                     c.drawRect(12f, 12f, 24f, 24f, pDark)
                     c.drawRect(12f, 0f, 24f, 12f, pLight)
@@ -278,18 +284,28 @@ fun ColoringCanvas(
                             val y = tapBmpOffset.y.toInt()
 
                             if (x in 0 until baseBitmap.width && y in 0 until baseBitmap.height) {
-                                val targetPixelColor = colorSource.getPixel(x, y)
-                                if (isMysteryMode || isColorMatch(currentColor, targetPixelColor)) {
+                                val targetIdx = paletteColors.indexOf(currentColor)
+                                val pixelCluster = if (colorMap != null && colorMap.size == baseBitmap.width * baseBitmap.height) {
+                                    colorMap[y * baseBitmap.width + x]
+                                } else {
+                                    ColorExtractor.closestPaletteIndex(colorSource.getPixel(x, y), paletteColors)
+                                }
+
+                                // Guided color match: tap must hit active color's region (or freeform mode)
+                                if (isFreeformMode || pixelCluster == targetIdx || targetIdx == -1) {
                                     val currentPixelColor = coloringBitmap.getPixel(x, y)
-                                    if (currentPixelColor == Color.TRANSPARENT || isMysteryMode) {
+                                    if (((currentPixelColor shr 24) and 0xFF) == 0 || isFreeformMode) {
                                         fastFloodFill(
-                                            coloringBitmap,
-                                            outlineBitmap,
-                                            colorSource,
-                                            x,
-                                            y,
-                                            currentColor,
-                                            isMysteryMode
+                                            coloring = coloringBitmap,
+                                            outline = outlineBitmap,
+                                            base = colorSource,
+                                            startX = x,
+                                            startY = y,
+                                            targetColor = currentColor,
+                                            paletteColors = paletteColors,
+                                            colorMap = colorMap,
+                                            isMysteryMode = isMysteryMode,
+                                            isFreeform = isFreeformMode
                                         )
                                         undoRedoManager.addAction(
                                             CanvasAction(
@@ -346,8 +362,8 @@ fun ColoringCanvas(
                     val paperPaint = Paint().apply { color = Color.WHITE }
                     drawRect(0f, 0f, bitmapWidth, bitmapHeight, paperPaint)
 
-                    // 2. Active color checkerboard highlight mask
-                    if (currentTool == Tool.BUCKET && maskBitmap != null) {
+                    // 2. Active color checkerboard highlight mask for guided coloring
+                    if ((currentTool == Tool.BUCKET || isMysteryMode) && maskBitmap != null && !isFreeformMode) {
                         val saveCount = saveLayer(0f, 0f, bitmapWidth, bitmapHeight, null)
                         drawBitmap(maskBitmap!!, 0f, 0f, null)
                         val maskedCheckerPaint = Paint(checkerboardPaint).apply {
@@ -375,8 +391,9 @@ fun ColoringCanvas(
                     if (!isMysteryMode) {
                         drawBitmap(outlineBitmap, 0f, 0f, null)
                     } else {
-                        val paint = Paint().apply { alpha = 24 }
-                        drawBitmap(outlineBitmap, 0f, 0f, paint)
+                        // Subtle, delicate arcanepunk whisper outline (hint)
+                        val hintPaint = Paint().apply { alpha = 45 }
+                        drawBitmap(outlineBitmap, 0f, 0f, hintPaint)
                     }
                 }
 
@@ -415,8 +432,9 @@ private fun screenToBitmap(
 }
 
 /**
- * Ultra-fast, zero-heap-thrashing Span-based Flood Fill algorithm.
- * Fills outlined regions in under 3ms.
+ * Ultra-fast Span-based Flood Fill algorithm.
+ * In guided modes (Bucket / Mystery), fills with authentic image pixels (basePixels).
+ * In Freeform mode, fills with selected pigment.
  */
 private fun fastFloodFill(
     coloring: Bitmap,
@@ -425,14 +443,16 @@ private fun fastFloodFill(
     startX: Int,
     startY: Int,
     targetColor: Int,
-    isMysteryMode: Boolean = false
+    paletteColors: List<Int>,
+    colorMap: IntArray?,
+    isMysteryMode: Boolean = false,
+    isFreeform: Boolean = false
 ) {
     val width = coloring.width
     val height = coloring.height
     val srcColor = coloring.getPixel(startX, startY)
 
-    if (!isMysteryMode && srcColor == targetColor) return
-    if (isMysteryMode && srcColor != Color.TRANSPARENT) return
+    if (!isFreeform && ((srcColor shr 24) and 0xFF) > 0) return
 
     val coloringPixels = IntArray(width * height)
     val outlinePixels = IntArray(width * height)
@@ -442,54 +462,58 @@ private fun fastFloodFill(
     outline.getPixels(outlinePixels, 0, width, 0, 0, width, height)
     base.getPixels(basePixels, 0, width, 0, 0, width, height)
 
-    // Inline boundary check: Outline alpha > 100 or darker boundary
+    val targetIdx = paletteColors.indexOf(targetColor)
+
     fun isBoundary(x: Int, y: Int): Boolean {
         if (x !in 0 until width || y !in 0 until height) return true
         val p = outlinePixels[y * width + x]
         return ((p shr 24) and 0xFF) > 100
     }
 
-    if (isBoundary(startX, startY)) return
+    if (isBoundary(startX, startY) && !isMysteryMode) return
 
-    // Span-based queue for maximum memory locality & speed
+    fun matches(idx: Int): Boolean {
+        if (coloringPixels[idx] != srcColor) return false
+        if (!isFreeform && colorMap != null && colorMap.size == width * height && targetIdx != -1) {
+            return colorMap[idx] == targetIdx
+        }
+        return true
+    }
+
     val queue = ArrayDeque<Int>(width * 2)
     queue.add(startY * width + startX)
 
     while (queue.isNotEmpty()) {
         val pos = queue.removeFirst()
         val cy = pos / width
-        var cx = pos % width
+        val cx = pos % width
 
-        if (isBoundary(cx, cy) || coloringPixels[pos] != srcColor) continue
+        if (isBoundary(cx, cy) && !isMysteryMode) continue
+        if (!matches(pos)) continue
 
-        // Scan leftward
         var leftX = cx
-        while (leftX > 0 && !isBoundary(leftX - 1, cy) && coloringPixels[cy * width + (leftX - 1)] == srcColor) {
+        while (leftX > 0 && (isMysteryMode || !isBoundary(leftX - 1, cy)) && matches(cy * width + (leftX - 1))) {
             leftX--
         }
 
-        // Scan rightward
         var rightX = cx
-        while (rightX < width - 1 && !isBoundary(rightX + 1, cy) && coloringPixels[cy * width + (rightX + 1)] == srcColor) {
+        while (rightX < width - 1 && (isMysteryMode || !isBoundary(rightX + 1, cy)) && matches(cy * width + (rightX + 1))) {
             rightX++
         }
 
-        // Fill span
         for (x in leftX..rightX) {
             val idx = cy * width + x
-            coloringPixels[idx] = if (isMysteryMode) basePixels[idx] else targetColor
+            coloringPixels[idx] = if (isFreeform) targetColor else basePixels[idx]
 
-            // Check row above
             if (cy > 0) {
                 val upIdx = (cy - 1) * width + x
-                if (!isBoundary(x, cy - 1) && coloringPixels[upIdx] == srcColor) {
+                if ((isMysteryMode || !isBoundary(x, cy - 1)) && matches(upIdx)) {
                     queue.add(upIdx)
                 }
             }
-            // Check row below
             if (cy < height - 1) {
                 val downIdx = (cy + 1) * width + x
-                if (!isBoundary(x, cy + 1) && coloringPixels[downIdx] == srcColor) {
+                if ((isMysteryMode || !isBoundary(x, cy + 1)) && matches(downIdx)) {
                     queue.add(downIdx)
                 }
             }
@@ -501,48 +525,43 @@ private fun fastFloodFill(
 
 /**
  * Generates active color highlighting mask with zero overhead.
+ * Highlights exactly the regions where the selected palette color belongs.
  */
 private fun generateHighlightMask(
     base: Bitmap,
     coloring: Bitmap,
     targetColor: Int,
-    paletteColors: List<Int>
+    paletteColors: List<Int>,
+    colorMap: IntArray?
 ): Bitmap {
     val width = base.width
     val height = base.height
     val mask = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
 
-    val basePixels = IntArray(width * height)
     val coloringPixels = IntArray(width * height)
     val maskPixels = IntArray(width * height)
 
-    base.getPixels(basePixels, 0, width, 0, 0, width, height)
     coloring.getPixels(coloringPixels, 0, width, 0, 0, width, height)
 
-    for (i in basePixels.indices) {
-        val cColor = coloringPixels[i]
-        // If already colored, do not highlight
-        if (((cColor shr 24) and 0xFF) > 0) continue
+    val targetIdx = paletteColors.indexOf(targetColor)
+    if (targetIdx == -1) return mask
 
-        val bColor = basePixels[i]
-        if (isColorMatch(targetColor, bColor)) {
-            maskPixels[i] = 0xFFFFFFFF.toInt()
+    if (colorMap != null && colorMap.size == width * height) {
+        for (i in coloringPixels.indices) {
+            if (coloringPixels[i] == 0 && colorMap[i] == targetIdx) {
+                maskPixels[i] = 0xFFFFFFFF.toInt()
+            }
+        }
+    } else {
+        val basePixels = IntArray(width * height)
+        base.getPixels(basePixels, 0, width, 0, 0, width, height)
+        for (i in coloringPixels.indices) {
+            if (coloringPixels[i] == 0 && ColorExtractor.closestPaletteIndex(basePixels[i], paletteColors) == targetIdx) {
+                maskPixels[i] = 0xFFFFFFFF.toInt()
+            }
         }
     }
 
     mask.setPixels(maskPixels, 0, width, 0, 0, width, height)
     return mask
-}
-
-private fun isColorMatch(colorA: Int, colorB: Int): Boolean {
-    val rA = (colorA shr 16) and 0xFF
-    val gA = (colorA shr 8) and 0xFF
-    val bA = colorA and 0xFF
-
-    val rB = (colorB shr 16) and 0xFF
-    val gB = (colorB shr 8) and 0xFF
-    val bB = colorB and 0xFF
-
-    val dist = abs(rA - rB) + abs(gA - gB) + abs(bA - bB)
-    return dist < 120 // Forgiving threshold for color families
 }
