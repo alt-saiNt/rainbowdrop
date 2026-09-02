@@ -43,7 +43,7 @@ interface ProjectDao {
     suspend fun deleteHistoryForProject(id: Long)
 }
 
-@Database(entities = [ColoringProject::class, ActionEntry::class], version = 1)
+@Database(entities = [ColoringProject::class, ActionEntry::class], version = 1, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun projectDao(): ProjectDao

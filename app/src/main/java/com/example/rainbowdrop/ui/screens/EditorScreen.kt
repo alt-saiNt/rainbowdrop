@@ -1,18 +1,21 @@
 package com.example.rainbowdrop.ui.screens
 
 import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.ImageDecoder
+import android.graphics.Paint
 import android.os.Build
 import android.provider.MediaStore
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Redo
@@ -25,8 +28,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.room.Room
@@ -50,6 +54,8 @@ fun EditorScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+
     val db = remember {
         Room.databaseBuilder(context, AppDatabase::class.java, "rainbow_drop_db")
             .fallbackToDestructiveMigration(true)
@@ -70,8 +76,12 @@ fun EditorScreen(
     var isExporting by remember { mutableStateOf(false) }
     var exportProgress by remember { mutableStateOf(0f) }
 
+    var isPeeking by remember { mutableStateOf(false) }
+    var recenterTrigger by remember { mutableIntStateOf(0) }
+    var showMenu by remember { mutableStateOf(false) }
+
     val defaultPalette = remember {
-        listOf(Color.Red, Color.Yellow, Color.Green, Color.Blue, Color.Magenta, Color.Cyan, Color.Black)
+        listOf(Color(0xFFEF4444), Color(0xFFF59E0B), Color(0xFF10B981), Color(0xFF3B82F6), Color(0xFF8B5CF6), Color(0xFFEC4899), Color(0xFFFFFFFF), Color(0xFF1F2937))
     }
     val displayColors = remember(extractedColors) {
         extractedColors.ifEmpty { defaultPalette }
@@ -84,7 +94,7 @@ fun EditorScreen(
             val image = originalBitmap ?: return@launch
             val filter = activeFilter
             val historyActions = undoRedoManager.currentHistory
-            
+
             val projectId = currentProjectId
             val newId = if (projectId == null) {
                 val project = ColoringProject(
@@ -105,7 +115,7 @@ fun EditorScreen(
                 db.projectDao().updateProject(project)
                 projectId
             }
-            
+
             db.projectDao().deleteHistoryForProject(newId)
             historyActions.forEach { action ->
                 val entry = ActionEntry(
@@ -119,9 +129,10 @@ fun EditorScreen(
                 )
                 db.projectDao().insertAction(entry)
             }
-            
+
             withContext(Dispatchers.Main) {
                 currentProjectId = newId
+                snackbarHostState.showSnackbar("✨ Alchemical progress sealed in Vault!")
             }
         }
     }
@@ -130,10 +141,10 @@ fun EditorScreen(
         withContext(Dispatchers.IO) {
             try {
                 if (imageUri.isEmpty()) return@withContext
-                
+
                 val project = db.projectDao().getProjectByUri(imageUri)
                 var initialFilter = activeFilter
-                
+
                 if (project != null) {
                     val historyEntries = db.projectDao().getHistoryForProject(project.id).first()
                     val canvasActions = historyEntries.map { entry ->
@@ -157,7 +168,7 @@ fun EditorScreen(
                         undoRedoManager.loadHistory(canvasActions)
                     }
                 }
-                
+
                 val bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                     val source = ImageDecoder.createSource(context.contentResolver, android.net.Uri.parse(imageUri))
                     ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
@@ -169,7 +180,7 @@ fun EditorScreen(
                     MediaStore.Images.Media.getBitmap(context.contentResolver, android.net.Uri.parse(imageUri))
                 }
 
-                // Scale down bitmap to prevent OutOfMemory and slow filter/fill rendering
+                // Scale down bitmap to prevent OutOfMemory and keep high 120fps response
                 val maxDim = 1200
                 val scaled = if (bitmap.width > maxDim || bitmap.height > maxDim) {
                     val aspect = bitmap.width.toFloat() / bitmap.height.toFloat()
@@ -192,18 +203,14 @@ fun EditorScreen(
                 originalBitmap = mutableBitmap
                 val processed = ImageProcessor.applyFilter(mutableBitmap, initialFilter)
                 processedBitmap = processed
-                
-                // Clean outlines always generated from original/processed blurred image
+
                 val outlines = ImageProcessor.getOutlines(mutableBitmap)
-                
-                // Shading details only present for INK_SKETCH and TATTOO_FLASH
                 val shading = if (initialFilter == FilterType.INK_SKETCH || initialFilter == FilterType.TATTOO_FLASH) {
                     processed
                 } else {
                     null
                 }
 
-                // Dynamically extract colors from the original downscaled image
                 val paletteInts = ColorExtractor.extractPalette(mutableBitmap)
                 val paletteColors = paletteInts.map { Color(it) }
 
@@ -241,77 +248,295 @@ fun EditorScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Coloring Canvas") },
+                title = {
+                    Column {
+                        Text(
+                            text = if (isMysteryMode) "Mystery Crucible" else "Transmutation Canvas",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "${activeFilter.displayName} • ${activeTool.name}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            Icons.AutoMirrored.Rounded.ArrowBack,
+                            contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.secondary
+                        )
                     }
                 },
                 actions = {
                     IconButton(onClick = { saveProgress() }) {
-                        Icon(Icons.Rounded.Save, contentDescription = "Save Progress")
+                        Icon(
+                            Icons.Rounded.Save,
+                            contentDescription = "Save Progress",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
                     }
                     IconButton(onClick = {
                         scope.launch {
                             isExporting = true
                             processedBitmap?.let { base ->
-                                val video = exporter.export(base, undoRedoManager.currentHistory) { progress ->
+                                val videoUri = exporter.export(base, undoRedoManager.currentHistory) { progress ->
                                     exportProgress = progress
                                 }
-                                if (video != null) {
-                                    // Handle video export success
+                                if (videoUri != null) {
+                                    snackbarHostState.showSnackbar("🎬 Time-lapse video saved to Gallery!")
+                                } else {
+                                    snackbarHostState.showSnackbar("⚠️ Export failed. Please try again.")
                                 }
                             }
                             isExporting = false
                         }
                     }) {
-                        Icon(Icons.Rounded.IosShare, contentDescription = "Export")
+                        Icon(
+                            Icons.Rounded.IosShare,
+                            contentDescription = "Export Time-Lapse",
+                            tint = MaterialTheme.colorScheme.secondary
+                        )
                     }
-                }
+                    Box {
+                        IconButton(onClick = { showMenu = !showMenu }) {
+                            Icon(
+                                Icons.Rounded.MoreVert,
+                                contentDescription = "More Options",
+                                tint = MaterialTheme.colorScheme.secondary
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false },
+                            modifier = Modifier.background(MaterialTheme.colorScheme.surfaceVariant)
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Save Progress", color = MaterialTheme.colorScheme.onSurface) },
+                                leadingIcon = { Icon(Icons.Rounded.Save, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                                onClick = {
+                                    showMenu = false
+                                    saveProgress()
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Export Finished PNG", color = MaterialTheme.colorScheme.onSurface) },
+                                leadingIcon = { Icon(Icons.Rounded.IosShare, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                                onClick = {
+                                    showMenu = false
+                                    scope.launch {
+                                        processedBitmap?.let { base ->
+                                            val imageUri = exporter.exportStaticImage(
+                                                baseBitmap = base,
+                                                coloringBitmap = Bitmap.createBitmap(base.width, base.height, Bitmap.Config.ARGB_8888).apply {
+                                                    val c = Canvas(this)
+                                                    val p = Paint().apply {
+                                                        isAntiAlias = true
+                                                        style = Paint.Style.STROKE
+                                                        strokeWidth = 24f
+                                                        strokeCap = Paint.Cap.ROUND
+                                                        strokeJoin = Paint.Join.ROUND
+                                                    }
+                                                    undoRedoManager.currentHistory.forEach { action ->
+                                                        if (action.type == ActionType.DRAW) {
+                                                            p.color = action.color
+                                                            action.path?.let { c.drawPath(it, p) }
+                                                        }
+                                                    }
+                                                },
+                                                outlineBitmap = outlineBitmap,
+                                                isMysteryMode = activeMysteryMode
+                                            )
+                                            if (imageUri != null) {
+                                                snackbarHostState.showSnackbar("🖼️ High-Res PNG saved to Gallery!")
+                                            }
+                                        }
+                                    }
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Start New Project", color = MaterialTheme.colorScheme.onSurface) },
+                                leadingIcon = { Icon(Icons.Rounded.AddPhotoAlternate, contentDescription = null, tint = MaterialTheme.colorScheme.secondary) },
+                                onClick = {
+                                    showMenu = false
+                                    onBack()
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Return to Menu", color = MaterialTheme.colorScheme.onSurface) },
+                                leadingIcon = { Icon(Icons.Rounded.Home, contentDescription = null, tint = MaterialTheme.colorScheme.secondary) },
+                                onClick = {
+                                    showMenu = false
+                                    onBack()
+                                }
+                            )
+                        }
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                )
             )
         },
         bottomBar = {
             Surface(
-                tonalElevation = 3.dp,
-                color = MaterialTheme.colorScheme.surface
+                tonalElevation = 6.dp,
+                color = MaterialTheme.colorScheme.surface,
+                modifier = Modifier.border(
+                    width = 1.dp,
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+                )
             ) {
                 Column(
                     modifier = Modifier
                         .navigationBarsPadding()
-                        .padding(bottom = 8.dp)
+                        .padding(bottom = 6.dp)
                 ) {
                     if (isExporting) {
                         LinearProgressIndicator(
                             progress = { exportProgress },
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
+
+                    // 1. Horizontally Scrolling Color Palette
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp, horizontal = 12.dp)
+                    ) {
+                        ColorPickerRibbon(
+                            colors = displayColors,
+                            selectedColor = currentColor,
+                            onColorSelected = { currentColor = it }
+                        )
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), thickness = 1.dp)
+
+                    // 2. Streamlined Primary Tool Ribbon Carousel
                     Row(
                         modifier = Modifier
-                            .padding(horizontal = 16.dp, vertical = 12.dp)
-                            .fillMaxWidth(),
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState())
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Box(modifier = Modifier.weight(1f)) {
-                            ColorPicker(
-                                colors = displayColors,
-                                selectedColor = currentColor,
-                                onColorSelected = { currentColor = it }
+                        // Tool Toggle (Bucket vs Brush)
+                        FilterChip(
+                            selected = activeTool == Tool.BUCKET,
+                            onClick = { activeTool = Tool.BUCKET },
+                            label = { Text("Bucket", fontWeight = FontWeight.Bold) },
+                            leadingIcon = {
+                                Icon(Icons.Rounded.FormatColorFill, contentDescription = "Bucket Fill", modifier = Modifier.size(18.dp))
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                selectedLeadingIconColor = MaterialTheme.colorScheme.primary
+                            )
+                        )
+
+                        FilterChip(
+                            selected = activeTool == Tool.BRUSH,
+                            onClick = { activeTool = Tool.BRUSH },
+                            label = { Text("Brush", fontWeight = FontWeight.Bold) },
+                            leadingIcon = {
+                                Icon(Icons.Rounded.Brush, contentDescription = "Freestyle Brush", modifier = Modifier.size(18.dp))
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                selectedLeadingIconColor = MaterialTheme.colorScheme.primary
+                            )
+                        )
+
+                        // Hold to Peek Button
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(if (isPeeking) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
+                                .pointerInput(Unit) {
+                                    awaitEachGesture {
+                                        awaitFirstDown(requireUnconsumed = false)
+                                        isPeeking = true
+                                        try {
+                                            while (true) {
+                                                val event = awaitPointerEvent()
+                                                if (!event.changes.any { it.pressed }) break
+                                            }
+                                        } finally {
+                                            isPeeking = false
+                                        }
+                                    }
+                                }
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    Icons.Rounded.Visibility,
+                                    contentDescription = "Hold to Peek",
+                                    tint = if (isPeeking) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.secondary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = if (isPeeking) "Peeking..." else "Hold to Peek",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isPeeking) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+
+                        // Recenter / Zoom to Fit
+                        OutlinedButton(
+                            onClick = { recenterTrigger++ },
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.secondary)
+                        ) {
+                            Icon(
+                                Icons.Rounded.CenterFocusStrong,
+                                contentDescription = "Recenter",
+                                tint = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Recenter", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
+                        }
+
+                        // Undo & Redo Levers
+                        IconButton(
+                            onClick = { undoRedoManager.undo() },
+                            enabled = undoRedoManager.currentHistory.isNotEmpty()
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Rounded.Undo,
+                                contentDescription = "Undo",
+                                tint = if (undoRedoManager.currentHistory.isNotEmpty()) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
                             )
                         }
-                        
-                        Spacer(modifier = Modifier.width(16.dp))
 
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            IconButton(onClick = { undoRedoManager.undo() }) {
-                                Icon(Icons.AutoMirrored.Rounded.Undo, contentDescription = "Undo")
-                            }
-                            IconButton(onClick = { undoRedoManager.redo() }) {
-                                Icon(Icons.AutoMirrored.Rounded.Redo, contentDescription = "Redo")
-                            }
+                        IconButton(
+                            onClick = { undoRedoManager.redo() }
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Rounded.Redo,
+                                contentDescription = "Redo",
+                                tint = MaterialTheme.colorScheme.secondary
+                            )
                         }
                     }
                 }
@@ -335,140 +560,55 @@ fun EditorScreen(
                     isMysteryMode = activeMysteryMode,
                     undoRedoManager = undoRedoManager,
                     shadingBitmap = shadingBitmap,
-                    paletteColors = displayColors.map { it.toArgb() }
+                    paletteColors = displayColors.map { it.toArgb() },
+                    isPeeking = isPeeking,
+                    recenterTrigger = recenterTrigger
                 )
             } else {
-                CircularProgressIndicator()
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text("Aligning Canvas Pigments...", color = MaterialTheme.colorScheme.secondary)
+                }
             }
         }
     }
 }
 
 @Composable
-fun FilterCarousel(
-    selectedFilter: FilterType,
-    onFilterSelected: (FilterType) -> Unit
-) {
-    LazyRow(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        contentPadding = PaddingValues(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        FilterType.entries.forEach { filter ->
-            item {
-                FilterItem(
-                    filter = filter,
-                    isSelected = filter == selectedFilter,
-                    onClick = { onFilterSelected(filter) }
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun FilterItem(
-    filter: FilterType,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    InputChip(
-        selected = isSelected,
-        onClick = onClick,
-        label = { Text(filter.displayName) }
-    )
-}
-
-@Composable
-fun ToolBar(
-    currentTool: Tool,
-    onToolSelected: (Tool) -> Unit,
-    colors: List<Color>,
-    currentColor: Color,
-    onColorSelected: (Color) -> Unit,
-    onUndo: () -> Unit,
-    onRedo: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .padding(16.dp)
-            .fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            ToolButton(
-                icon = Icons.Rounded.FormatColorFill,
-                isSelected = currentTool == Tool.BUCKET,
-                onClick = { onToolSelected(Tool.BUCKET) }
-            )
-            ToolButton(
-                icon = Icons.Rounded.Brush,
-                isSelected = currentTool == Tool.BRUSH,
-                onClick = { onToolSelected(Tool.BRUSH) }
-            )
-        }
-
-        ColorPicker(
-            colors = colors,
-            selectedColor = currentColor,
-            onColorSelected = onColorSelected
-        )
-        
-        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            IconButton(onClick = onUndo) {
-                Icon(Icons.AutoMirrored.Rounded.Undo, contentDescription = "Undo")
-            }
-            IconButton(onClick = onRedo) {
-                Icon(Icons.AutoMirrored.Rounded.Redo, contentDescription = "Redo")
-            }
-        }
-    }
-}
-
-@Composable
-fun ToolButton(
-    icon: ImageVector,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    IconButton(
-        onClick = onClick,
-        colors = IconButtonDefaults.iconButtonColors(
-            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
-        )
-    ) {
-        Icon(icon, contentDescription = null)
-    }
-}
-
-@Composable
-fun ColorPicker(
+fun ColorPickerRibbon(
     colors: List<Color>,
     selectedColor: Color,
     onColorSelected: (Color) -> Unit
 ) {
     Row(
-        modifier = Modifier.horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
         colors.forEach { color ->
+            val isSelected = color == selectedColor
             Box(
                 modifier = Modifier
-                    .size(32.dp)
+                    .size(36.dp)
                     .clip(CircleShape)
                     .background(color)
+                    .border(
+                        width = if (isSelected) 3.dp else 1.dp,
+                        color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Black.copy(alpha = 0.4f),
+                        shape = CircleShape
+                    )
                     .clickable { onColorSelected(color) }
-                    .padding(4.dp)
             ) {
-                if (color == selectedColor) {
+                if (isSelected) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
+                            .padding(4.dp)
                             .clip(CircleShape)
-                            .border(2.dp, Color.White, CircleShape)
+                            .border(1.5.dp, Color.White, CircleShape)
                     )
                 }
             }

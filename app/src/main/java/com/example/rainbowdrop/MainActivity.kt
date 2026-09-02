@@ -38,6 +38,16 @@ class MainActivity : ComponentActivity() {
                             HomeScreen(
                                 onImageSelected = { uri ->
                                     navigator.navigate(Route.FilterSelection(uri))
+                                },
+                                onProjectSelected = { project ->
+                                    navigator.navigate(
+                                        Route.Editor(
+                                            imageUri = project.originalImageUri,
+                                            filterType = project.filterType.name,
+                                            tool = project.tool.name,
+                                            isMysteryMode = project.isMysteryMode
+                                        )
+                                    )
                                 }
                             )
                         }
