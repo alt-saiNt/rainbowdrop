@@ -1,2 +1,28 @@
+# Gradle and Kotlin caches
+.gradle/
+.kotlin/
+**/build/
+
+# Machine-specific Android configuration
+local.properties
+.idea/
+*.iml
+
+# Native and profiling output
+.cxx/
+.externalNativeBuild/
+captures/
+*.hprof
+
+# Local test inputs and generated runs
+input_images/
 TestRuns/
-c:/projects/rainbow drop/testruns/
+
+# Retired AI scaffolding and local agent state
+.agent/
+.agents/
+
+# Local screenshots and operating-system metadata
+emulator_*.png
+.DS_Store
+Thumbs.db

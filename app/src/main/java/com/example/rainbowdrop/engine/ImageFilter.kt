@@ -19,7 +19,14 @@ enum class FilterType(val displayName: String) {
     VECTOR_POSTER("Vector Poster"),
     INK_SKETCH("Ink Sketch"),
     CHARCOAL("Charcoal"),
-    TATTOO_FLASH("Tattoo Flash")
+    TATTOO_FLASH("Tattoo Flash");
+
+    companion object {
+        /** Monochrome experiments remain readable for old saves but are hidden from new projects. */
+        val selectableEntries: List<FilterType> = entries.filterNot {
+            it == INK_SKETCH || it == CHARCOAL
+        }
+    }
 }
 
 object ImageProcessor {

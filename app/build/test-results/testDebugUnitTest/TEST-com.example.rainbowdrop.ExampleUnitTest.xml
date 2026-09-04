@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.example.rainbowdrop.ExampleUnitTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-06-28T11:47:59.538Z" hostname="SAINTS_PC" time="0.007">
-  <properties/>
-  <testcase name="addition_isCorrect" classname="com.example.rainbowdrop.ExampleUnitTest" time="0.002"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

@@ -63,6 +63,7 @@ fun EditorScreen(
     }
     val undoRedoManager = remember { UndoRedoManager() }
     val exporter = remember { TimeLapseExporter(context) }
+    val originalEngine = remember { OriginalColoringEngine() }
 
     var originalBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var processedBitmap by remember { mutableStateOf<Bitmap?>(null) }
@@ -74,6 +75,8 @@ fun EditorScreen(
     var currentColor by remember { mutableStateOf(Color.Red) }
     var extractedColors by remember { mutableStateOf<List<Color>>(emptyList()) }
     var colorMap by remember { mutableStateOf<IntArray?>(null) }
+    var coloringDocument by remember { mutableStateOf<ColoringDocument?>(null) }
+    var processingError by remember { mutableStateOf<String?>(null) }
     var isExporting by remember { mutableStateOf(false) }
     var exportProgress by remember { mutableStateOf(0f) }
 
@@ -141,8 +144,6 @@ fun EditorScreen(
                 if (imageUri.isEmpty()) return@withContext
 
                 val project = db.projectDao().getProjectByUri(imageUri)
-                var initialFilter = activeFilter
-
                 if (project != null) {
                     val historyEntries = db.projectDao().getHistoryForProject(project.id).first()
                     val canvasActions = historyEntries.map { entry ->
@@ -157,7 +158,6 @@ fun EditorScreen(
                             points = pointsList
                         )
                     }
-                    initialFilter = project.filterType
                     withContext(Dispatchers.Main) {
                         currentProjectId = project.id
                         activeFilter = project.filterType
@@ -198,33 +198,15 @@ fun EditorScreen(
                     scaled
                 }
 
-                originalBitmap = mutableBitmap
-                val processed = ImageProcessor.applyFilter(mutableBitmap, initialFilter)
-                processedBitmap = processed
-
-                val outlines = ImageProcessor.getOutlines(mutableBitmap)
-                val shading = if (initialFilter == FilterType.INK_SKETCH || initialFilter == FilterType.TATTOO_FLASH) {
-                    processed
-                } else {
-                    null
-                }
-
-                val targetForPalette = processed
-                val paletteInts = ColorExtractor.extractPalette(targetForPalette, targetColorCount = 18)
-                val paletteColors = paletteInts.map { Color(it) }
-                val map = ColorExtractor.generateColorMap(targetForPalette, paletteInts)
-
                 withContext(Dispatchers.Main) {
-                    outlineBitmap = outlines
-                    shadingBitmap = shading
-                    extractedColors = paletteColors
-                    colorMap = map
-                    if (paletteColors.isNotEmpty()) {
-                        currentColor = paletteColors.first()
-                    }
+                    processingError = null
+                    originalBitmap = mutableBitmap
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
+                withContext(Dispatchers.Main) {
+                    processingError = e.message ?: "The selected image could not be opened."
+                }
             }
         }
     }
@@ -232,27 +214,41 @@ fun EditorScreen(
     LaunchedEffect(activeFilter, originalBitmap) {
         val original = originalBitmap ?: return@LaunchedEffect
         withContext(Dispatchers.IO) {
-            val processed = ImageProcessor.applyFilter(original, activeFilter)
-            processedBitmap = processed
-            val outlines = ImageProcessor.getOutlines(original)
-            val shading = if (activeFilter == FilterType.INK_SKETCH || activeFilter == FilterType.TATTOO_FLASH) {
-                processed
-            } else {
-                null
-            }
+            try {
+                val processed = ImageProcessor.applyFilter(original, activeFilter)
+                val document = if (activeFilter == FilterType.ORIGINAL) {
+                    originalEngine.prepare(original)
+                } else {
+                    null
+                }
+                val outlines = document?.createFullOutlineBitmap()
+                    ?: ImageProcessor.getOutlines(original)
+                val shading = if (activeFilter == FilterType.INK_SKETCH || activeFilter == FilterType.TATTOO_FLASH) {
+                    processed
+                } else {
+                    null
+                }
+                val paletteInts = document?.palette?.map { it.argb }
+                    ?: ColorExtractor.extractPalette(processed, targetColorCount = 18)
+                val map = document?.colorIdByPixel
+                    ?: ColorExtractor.generateColorMap(processed, paletteInts)
 
-            val targetForPalette = processed
-            val paletteInts = ColorExtractor.extractPalette(targetForPalette, targetColorCount = 18)
-            val paletteColors = paletteInts.map { Color(it) }
-            val map = ColorExtractor.generateColorMap(targetForPalette, paletteInts)
-
-            withContext(Dispatchers.Main) {
-                outlineBitmap = outlines
-                shadingBitmap = shading
-                extractedColors = paletteColors
-                colorMap = map
-                if (paletteColors.isNotEmpty() && !paletteColors.contains(currentColor)) {
-                    currentColor = paletteColors.first()
+                withContext(Dispatchers.Main) {
+                    processingError = null
+                    processedBitmap = processed
+                    outlineBitmap = outlines
+                    shadingBitmap = shading
+                    extractedColors = paletteInts.map { Color(it) }
+                    colorMap = map
+                    coloringDocument = document
+                    if (paletteInts.isNotEmpty() && paletteInts.none { it == currentColor.toArgb() }) {
+                        currentColor = Color(paletteInts.first())
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                withContext(Dispatchers.Main) {
+                    processingError = e.message ?: "This image could not be prepared for coloring."
                 }
             }
         }
@@ -575,9 +571,16 @@ fun EditorScreen(
                     shadingBitmap = shadingBitmap,
                     paletteColors = displayColors.map { it.toArgb() },
                     colorMap = colorMap,
+                    coloringDocument = coloringDocument,
                     isFreeformMode = isFreeform,
                     isPeeking = isPeeking,
                     recenterTrigger = recenterTrigger
+                )
+            } else if (processingError != null) {
+                Text(
+                    text = processingError ?: "This image could not be prepared for coloring.",
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(24.dp)
                 )
             } else {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -637,7 +640,7 @@ fun EditorScreenPreview() {
     RainbowDropTheme {
         EditorScreen(
             imageUri = "",
-            filterType = FilterType.INK_SKETCH,
+            filterType = FilterType.ORIGINAL,
             tool = Tool.BUCKET,
             isMysteryMode = false,
             onBack = {}

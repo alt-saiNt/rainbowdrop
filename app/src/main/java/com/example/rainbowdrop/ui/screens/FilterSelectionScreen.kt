@@ -43,7 +43,7 @@ fun FilterSelectionScreen(
     val context = LocalContext.current
     var originalBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var previewBitmap by remember { mutableStateOf<Bitmap?>(null) }
-    var selectedFilter by remember { mutableStateOf(FilterType.INK_SKETCH) }
+    var selectedFilter by remember { mutableStateOf(FilterType.ORIGINAL) }
     var isLoading by remember { mutableStateOf(true) }
     var isProcessing by remember { mutableStateOf(false) }
 
@@ -204,7 +204,7 @@ fun FilterSelectionScreen(
                         .padding(vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(FilterType.entries) { filter ->
+                    items(FilterType.selectableEntries) { filter ->
                         val isSelected = filter == selectedFilter
                         Box(
                             modifier = Modifier
@@ -266,5 +266,4 @@ fun FilterSelectionScreen(
         }
     }
 }
-
 

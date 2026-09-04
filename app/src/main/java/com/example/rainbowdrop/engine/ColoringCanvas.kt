@@ -30,11 +30,14 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
 import com.example.rainbowdrop.data.ActionType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.ArrayDeque
 import kotlin.math.abs
+import kotlin.math.ceil
 
 enum class Tool {
     BUCKET, BRUSH
@@ -53,12 +56,14 @@ fun ColoringCanvas(
     shadingBitmap: Bitmap? = null,
     paletteColors: List<Int> = emptyList(),
     colorMap: IntArray? = null,
+    coloringDocument: ColoringDocument? = null,
     isFreeformMode: Boolean = false,
     isPeeking: Boolean = false,
     recenterTrigger: Int = 0
 ) {
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
+    val guidedTapRadiusPx = with(LocalDensity.current) { 24.dp.toPx() }
     
     LaunchedEffect(recenterTrigger) {
         if (recenterTrigger > 0) {
@@ -91,7 +96,7 @@ fun ColoringCanvas(
     var redrawTrigger by remember { mutableIntStateOf(0) }
 
     // Reconstruct canvas from history non-destructively
-    LaunchedEffect(undoRedoManager.changeCount, baseBitmap, coloredBitmap) {
+    LaunchedEffect(undoRedoManager.changeCount, baseBitmap, coloredBitmap, coloringDocument) {
         coloringBitmap.eraseColor(Color.TRANSPARENT)
         val colorSource = coloredBitmap ?: baseBitmap
         undoRedoManager.currentHistory.forEach { action ->
@@ -111,18 +116,31 @@ fun ColoringCanvas(
                 }
                 ActionType.FILL -> {
                     if (action.x != null && action.y != null) {
-                        fastFloodFill(
-                            coloring = coloringBitmap,
-                            outline = outlineBitmap,
-                            base = colorSource,
-                            startX = action.x,
-                            startY = action.y,
-                            targetColor = action.color,
-                            paletteColors = paletteColors,
-                            colorMap = colorMap,
-                            isMysteryMode = isMysteryMode,
-                            isFreeform = isFreeformMode
-                        )
+                        val document = coloringDocument
+                        if (document != null && currentTool == Tool.BUCKET &&
+                            !isMysteryMode && !isFreeformMode
+                        ) {
+                            fillGuidedRegion(
+                                coloring = coloringBitmap,
+                                document = document,
+                                x = action.x,
+                                y = action.y,
+                                selectedColor = action.color
+                            )
+                        } else {
+                            fastFloodFill(
+                                coloring = coloringBitmap,
+                                outline = outlineBitmap,
+                                base = colorSource,
+                                startX = action.x,
+                                startY = action.y,
+                                targetColor = action.color,
+                                paletteColors = paletteColors,
+                                colorMap = colorMap,
+                                isMysteryMode = isMysteryMode,
+                                isFreeform = isFreeformMode
+                            )
+                        }
                     }
                 }
             }
@@ -132,8 +150,8 @@ fun ColoringCanvas(
 
     var maskBitmap by remember { mutableStateOf<Bitmap?>(null) }
 
-    // Active color checkerboard highlight mask for guided coloring
-    LaunchedEffect(currentColor, baseBitmap, redrawTrigger, currentTool, coloredBitmap, paletteColors, colorMap, isFreeformMode) {
+    // Highlight the still-unfilled regions that belong to the selected color.
+    LaunchedEffect(currentColor, baseBitmap, redrawTrigger, currentTool, coloredBitmap, paletteColors, colorMap, coloringDocument, isFreeformMode) {
         if (isFreeformMode || (currentTool != Tool.BUCKET && !isMysteryMode)) {
             maskBitmap = null
             return@LaunchedEffect
@@ -144,7 +162,8 @@ fun ColoringCanvas(
                 coloring = coloringBitmap,
                 targetColor = currentColor,
                 paletteColors = paletteColors,
-                colorMap = colorMap
+                colorMap = colorMap,
+                coloringDocument = coloringDocument
             )
             withContext(Dispatchers.Main) {
                 maskBitmap = mask
@@ -152,18 +171,21 @@ fun ColoringCanvas(
         }
     }
 
-    // High-contrast arcanepunk checkerboard pattern
+    // A translucent gold hatch reads as guidance without looking like applied pigment.
     val checkerboardPaint = remember {
         Paint().apply {
             shader = BitmapShader(
-                Bitmap.createBitmap(24, 24, Bitmap.Config.ARGB_8888).apply {
+                Bitmap.createBitmap(28, 28, Bitmap.Config.ARGB_8888).apply {
                     val c = Canvas(this)
-                    val pDark = Paint().apply { color = Color.rgb(40, 44, 52) }
-                    val pLight = Paint().apply { color = Color.rgb(88, 96, 110) }
-                    c.drawRect(0f, 0f, 12f, 12f, pDark)
-                    c.drawRect(12f, 12f, 24f, 24f, pDark)
-                    c.drawRect(12f, 0f, 24f, 12f, pLight)
-                    c.drawRect(0f, 12f, 12f, 24f, pLight)
+                    c.drawColor(Color.argb(26, 255, 196, 54))
+                    val stripe = Paint().apply {
+                        color = Color.argb(105, 255, 196, 54)
+                        strokeWidth = 4f
+                        isAntiAlias = true
+                    }
+                    c.drawLine(-7f, 7f, 7f, -7f, stripe)
+                    c.drawLine(0f, 28f, 28f, 0f, stripe)
+                    c.drawLine(21f, 35f, 35f, 21f, stripe)
                 },
                 Shader.TileMode.REPEAT,
                 Shader.TileMode.REPEAT
@@ -175,7 +197,7 @@ fun ColoringCanvas(
         modifier = modifier
             .fillMaxSize()
             .transformable(state = transformState)
-            .pointerInput(currentTool, currentColor, isMysteryMode, baseBitmap) {
+            .pointerInput(currentTool, currentColor, isMysteryMode, baseBitmap, coloringDocument, guidedTapRadiusPx) {
                 awaitEachGesture {
                     val down = awaitFirstDown(requireUnconsumed = false)
                     var isSingleTouch = true
@@ -284,39 +306,72 @@ fun ColoringCanvas(
                             val y = tapBmpOffset.y.toInt()
 
                             if (x in 0 until baseBitmap.width && y in 0 until baseBitmap.height) {
-                                val targetIdx = paletteColors.indexOf(currentColor)
-                                val pixelCluster = if (colorMap != null && colorMap.size == baseBitmap.width * baseBitmap.height) {
-                                    colorMap[y * baseBitmap.width + x]
-                                } else {
-                                    ColorExtractor.closestPaletteIndex(colorSource.getPixel(x, y), paletteColors)
-                                }
-
-                                // Guided color match: tap must hit active color's region (or freeform mode)
-                                if (isFreeformMode || pixelCluster == targetIdx || targetIdx == -1) {
-                                    val currentPixelColor = coloringBitmap.getPixel(x, y)
-                                    if (((currentPixelColor shr 24) and 0xFF) == 0 || isFreeformMode) {
-                                        fastFloodFill(
-                                            coloring = coloringBitmap,
-                                            outline = outlineBitmap,
-                                            base = colorSource,
-                                            startX = x,
-                                            startY = y,
-                                            targetColor = currentColor,
-                                            paletteColors = paletteColors,
-                                            colorMap = colorMap,
-                                            isMysteryMode = isMysteryMode,
-                                            isFreeform = isFreeformMode
-                                        )
+                                val document = coloringDocument
+                                if (document != null && !isMysteryMode && !isFreeformMode) {
+                                    val fitScale = minOf(
+                                        size.width.toFloat() / baseBitmap.width,
+                                        size.height.toFloat() / baseBitmap.height
+                                    )
+                                    val bitmapTapRadius = ceil(
+                                        guidedTapRadiusPx / (scale * fitScale).coerceAtLeast(0.01f)
+                                    ).toInt().coerceIn(1, 96)
+                                    val result = fillGuidedRegion(
+                                        coloring = coloringBitmap,
+                                        document = document,
+                                        x = x,
+                                        y = y,
+                                        selectedColor = currentColor,
+                                        maxSnapDistance = bitmapTapRadius
+                                    )
+                                    if (result is GuidedFillResult.Filled) {
+                                        val filledRegion = document.regions[result.regionId]
+                                        val historyAnchor = filledRegion.runs.first()
                                         undoRedoManager.addAction(
                                             CanvasAction(
                                                 type = ActionType.FILL,
                                                 tool = Tool.BUCKET,
                                                 color = currentColor,
-                                                x = x,
-                                                y = y
+                                                x = historyAnchor.startX,
+                                                y = historyAnchor.y
                                             )
                                         )
                                         redrawTrigger++
+                                    }
+                                } else {
+                                    val targetIdx = paletteColors.indexOf(currentColor)
+                                    val pixelCluster = if (colorMap != null && colorMap.size == baseBitmap.width * baseBitmap.height) {
+                                        colorMap[y * baseBitmap.width + x]
+                                    } else {
+                                        ColorExtractor.closestPaletteIndex(colorSource.getPixel(x, y), paletteColors)
+                                    }
+
+                                    // Legacy path retained for Creative, Challenge, and filtered styles.
+                                    if (isFreeformMode || pixelCluster == targetIdx || targetIdx == -1) {
+                                        val currentPixelColor = coloringBitmap.getPixel(x, y)
+                                        if (((currentPixelColor shr 24) and 0xFF) == 0 || isFreeformMode) {
+                                            fastFloodFill(
+                                                coloring = coloringBitmap,
+                                                outline = outlineBitmap,
+                                                base = colorSource,
+                                                startX = x,
+                                                startY = y,
+                                                targetColor = currentColor,
+                                                paletteColors = paletteColors,
+                                                colorMap = colorMap,
+                                                isMysteryMode = isMysteryMode,
+                                                isFreeform = isFreeformMode
+                                            )
+                                            undoRedoManager.addAction(
+                                                CanvasAction(
+                                                    type = ActionType.FILL,
+                                                    tool = Tool.BUCKET,
+                                                    color = currentColor,
+                                                    x = x,
+                                                    y = y
+                                                )
+                                            )
+                                            redrawTrigger++
+                                        }
                                     }
                                 }
                             }
@@ -401,6 +456,30 @@ fun ColoringCanvas(
             }
         }
     }
+}
+
+private fun fillGuidedRegion(
+    coloring: Bitmap,
+    document: ColoringDocument,
+    x: Int,
+    y: Int,
+    selectedColor: Int,
+    maxSnapDistance: Int = 0
+): GuidedFillResult {
+    val pixels = IntArray(document.width * document.height)
+    coloring.getPixels(pixels, 0, document.width, 0, 0, document.width, document.height)
+    val result = GuidedRegionPainter.fillAt(
+        document = document,
+        coloringPixels = pixels,
+        x = x,
+        y = y,
+        selectedColor = selectedColor,
+        maxSnapDistance = maxSnapDistance
+    )
+    if (result is GuidedFillResult.Filled) {
+        coloring.setPixels(pixels, 0, document.width, 0, 0, document.width, document.height)
+    }
+    return result
 }
 
 private fun screenToBitmap(
@@ -532,7 +611,8 @@ private fun generateHighlightMask(
     coloring: Bitmap,
     targetColor: Int,
     paletteColors: List<Int>,
-    colorMap: IntArray?
+    colorMap: IntArray?,
+    coloringDocument: ColoringDocument?
 ): Bitmap {
     val width = base.width
     val height = base.height
@@ -546,9 +626,17 @@ private fun generateHighlightMask(
     val targetIdx = paletteColors.indexOf(targetColor)
     if (targetIdx == -1) return mask
 
-    if (colorMap != null && colorMap.size == width * height) {
+    if (coloringDocument != null && coloringDocument.regionIdByPixel.size == width * height) {
         for (i in coloringPixels.indices) {
-            if (coloringPixels[i] == 0 && colorMap[i] == targetIdx) {
+            val regionId = coloringDocument.regionIdByPixel[i]
+            val requiredColorId = coloringDocument.regions.getOrNull(regionId)?.requiredColorId
+            if ((coloringPixels[i] ushr 24) == 0 && requiredColorId == targetIdx) {
+                maskPixels[i] = 0xFFFFFFFF.toInt()
+            }
+        }
+    } else if (colorMap != null && colorMap.size == width * height) {
+        for (i in coloringPixels.indices) {
+            if ((coloringPixels[i] ushr 24) == 0 && colorMap[i] == targetIdx) {
                 maskPixels[i] = 0xFFFFFFFF.toInt()
             }
         }
@@ -556,7 +644,7 @@ private fun generateHighlightMask(
         val basePixels = IntArray(width * height)
         base.getPixels(basePixels, 0, width, 0, 0, width, height)
         for (i in coloringPixels.indices) {
-            if (coloringPixels[i] == 0 && ColorExtractor.closestPaletteIndex(basePixels[i], paletteColors) == targetIdx) {
+            if ((coloringPixels[i] ushr 24) == 0 && ColorExtractor.closestPaletteIndex(basePixels[i], paletteColors) == targetIdx) {
                 maskPixels[i] = 0xFFFFFFFF.toInt()
             }
         }
